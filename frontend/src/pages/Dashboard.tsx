@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFleetStore } from "@/store/fleet";
+import { useNotificationStore } from "@/store/notifications";
 import { useMockWs } from "@/hooks/useMockWs";
 import { LiveMap } from "@/components/LiveMap";
 import { DriverCard } from "@/components/DriverCard";
@@ -270,6 +271,8 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { devices, setDevices, applyWsPacket } = useFleetStore();
+  const notificationsEnabled = useNotificationStore((s) => s.notificationsEnabled);
+  const addNotification = useNotificationStore((s) => s.addFromPacket);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "alert">("all");
 
@@ -286,7 +289,8 @@ export default function Dashboard() {
 
   const handlePacket = useCallback((p: WsPacket) => {
     applyWsPacket(p);
-    if (p.alarm_level === 3) {
+    addNotification(p);
+    if (p.alarm_level === 3 && notificationsEnabled) {
       const now = Date.now();
       const last = lastAlertTime.current[p.device_id] ?? 0;
       if (now - last > 30000) {
@@ -294,7 +298,7 @@ export default function Dashboard() {
         setAlertQueue((q) => [...q, p]);
       }
     }
-  }, [applyWsPacket]);
+  }, [applyWsPacket, addNotification, notificationsEnabled]);
 
   useMockWs(handlePacket, true);
 

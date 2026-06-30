@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, views, response
 from .models import Device, AlertEvent, Driver
 from .serializers import DeviceSerializer, DeviceCreateSerializer, AlertEventSerializer, DriverSerializer
 
@@ -71,6 +71,16 @@ class AlertEventViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(timestamp__date__lte=date_to)
 
         return qs
+
+
+class DeviceCountView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        qs = Device.objects.all()
+        if request.user.role != "admin":
+            qs = qs.filter(owner=request.user)
+        return response.Response({"count": qs.count()})
 
 
 class DriverViewSet(viewsets.ModelViewSet):

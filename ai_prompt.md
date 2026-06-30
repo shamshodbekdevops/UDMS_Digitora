@@ -1,152 +1,109 @@
-# DIGITORA DMS — Prompt 2: New Pages (History, Reports, Drivers)
+# DIGITORA DMS — Prompt 3: Settings & Notifications
 
-This is an ADDITION to the existing project. Add 3 new pages/sections.
-Use the EXACT same design system already in the project (glassmorphism
-cards, CSS variables, Framer Motion, same fonts, same color tokens).
-Do not introduce new design patterns — extend what already exists.
+This is an ADDITION to the existing project. Extend 2 existing
+features. Use the same design system — do not introduce new patterns.
 
 ---
 
-## PAGE 1 — History (`/history`)
+## FEATURE 1 — Notification toggle in Dashboard header
 
-Add a "Tarix" (History) page accessible from the sidebar.
+In the dashboard header, the notification bell (🔔) icon currently
+has no toggle functionality.
 
-**Content:**
-- A filterable, paginated table of all `AlertEvent` records from the
-  backend (`GET /api/alert-events/` with query params)
-- Columns: Timestamp, Driver name, Device ID, Alarm level (colored
-  badge — use `--safe`/`--caution`/`--warning`/`--danger` tokens),
-  PERCLOS %, Message, GPS location (lat/lon as small text)
-- Filters at the top: date range picker, alarm level multi-select,
-  device/driver select dropdown
-- Each row is clickable — expands inline (accordion style) to show
-  full details: all telemetry fields, a mini PERCLOS sparkline if
-  multiple events exist for that session
-- Export button (top right): exports current filtered view as CSV
-  (client-side, using plain JS `Blob` — no backend needed for this)
+**Add the following:**
 
-**Visual:**
-- Table rows use glassmorphism card style (not a plain HTML table) —
-  each row is a subtle card with hover lift effect
-- Alarm level badge pulses once on hover (reuse Risk Pulse animation
-  logic, single pulse, not continuous)
-- Empty state: a clean illustration placeholder with text
-  "No events found for the selected filters"
+### Bell icon behavior
+- Clicking the bell opens a notification panel (shadcn/ui `Sheet`
+  sliding in from the right, or an inline dropdown — your choice,
+  whichever fits the existing header layout better)
+- At the top of the panel: a toggle switch labeled
+  "Enable notifications" (on/off)
+- When OFF: bell icon gets a strikethrough slash overlay, no new
+  notification popups appear (suppress all Level 2/3 alert modals
+  and audio), persisted in `localStorage`
+- When ON (default): bell icon is normal, alerts function as usual
 
----
+### Notification panel content
+- List of the last 20 notifications (pulled from `AlertEvent` via
+  `GET /api/alert-events/?limit=20`)
+- Each item: colored alarm badge, driver name, message, relative
+  time ("3 minutes ago" — use a simple relative time formatter)
+- Unread items have a subtle left border in the alarm level color
+- "Mark all as read" button at the top
+- Unread count badge on the bell icon (red dot with number, max "9+")
 
-## PAGE 2 — Reports (`/reports`)
-
-Add a "Hisobot" (Reports) page accessible from the sidebar.
-
-**Content — 4 sections on one page:**
-
-### Section A — Summary cards (top row)
-4 stat cards: Total drivers, Total alerts today, Average PERCLOS
-(fleet-wide, last 24h), Most at-risk driver (name + alarm count).
-Numbers use count-up animation on page load (reuse existing count-up
-pattern from the project).
-
-### Section B — Bar chart: Alerts by driver
-Recharts `BarChart` — X axis: driver names, Y axis: alert count.
-Bars are colored by the driver's worst alarm level today
-(`--caution`, `--warning`, `--danger`). Clicking a bar filters
-Section D to that driver.
-
-### Section C — Pie chart: Alarm level distribution
-Recharts `PieChart` — slices for Level 0/1/2/3 counts (last 7 days).
-Use exact colors: `--safe`, `--caution`, `--warning`, `--danger`.
-Show percentage labels inside slices. On hover, slice expands slightly
-(Recharts built-in `activeShape`). Legend below the chart.
-
-### Section D — Live data table
-Same component as the History table but pre-filtered to "today" and
-without the date filter (since this is a "today's report" view).
-Syncs with WebSocket — new events append to the top of the table in
-real time with a brief highlight animation (`background` flash from
-`--warning`/`--danger` to transparent over 1.5s).
-
-**Visual:**
-- All 4 sections on one scrollable page with clear section headings
-- Charts use the same glassmorphism card wrapper as everything else
-- Chart grid lines and axis labels use `--text-muted` color
-- Chart tooltip uses the glassmorphism style (`backdrop-blur`,
-  `--surface-elevated` background, `--border` border)
+### Real-time: new WebSocket Level 2/3 events
+- Append to the notification list automatically (no page refresh)
+- Increment the unread count badge
+- If notifications are ON: show the existing Level 3 modal AND play
+  the audio signal
 
 ---
 
-## PAGE 3 — Drivers (`/drivers`)
+## FEATURE 2 — Settings page (full content)
 
-Add a "Haydovchilar" (Drivers) page accessible from the sidebar.
-Clicking "Drivers" in the sidebar opens this page.
+The Settings page (`/settings`) currently exists but is mostly empty
+or has placeholder content. Fill it with real, useful content divided
+into these sections (use a left tab/nav + right content layout within
+the page):
 
-**Content:**
+### Tab 1 — Profile
+- Display name (editable text field)
+- Email (read-only, from JWT/auth)
+- Phone number (editable)
+- Language preference (dropdown: Uzbek / English / Korean — connects
+  to the existing i18n system, changing this should immediately switch
+  the UI language)
+- Save button → `PATCH /api/users/me/`
 
-### Driver list (main view)
-- Grid of driver cards (3 columns desktop, 2 tablet, 1 mobile)
-- Each card shows: avatar (initials-based, colored by role/status),
-  driver name, assigned vehicle plate, device ID, current status
-  (Online/Offline badge), total alerts this week
-- Search bar at the top (filters cards in real time, client-side)
-- "Add Driver" button (top right, primary style with `--accent` color)
+### Tab 2 — Account & Role
+- Current role displayed prominently (large badge: "Free" or
+  "Business" or "Admin")
+- For Free users: an upgrade CTA card — "Upgrade to Business"
+  with listed features and a "$49/month" price tag (UI only, no
+  real payment — button shows "Contact sales" or a mailto link)
+- For Business users: company name (editable), number of active
+  devices (read-only, from `GET /api/devices/count/`)
+- Account status: "Active" green badge
 
-### Add / Edit Driver (modal, not a new page)
-When "Add Driver" is clicked OR a driver card's edit icon is clicked,
-open a shadcn/ui `Dialog` modal with this form:
-- Full name (text input)
-- Vehicle plate (text input)
-- Device ID (select from unassigned devices, fetched from
-  `GET /api/devices/?unassigned=true`)
-- Phone number (text input, optional)
-- Notes (textarea, optional)
-- Submit button: "Save" (POST to `POST /api/drivers/` for new,
-  PATCH to `PATCH /api/drivers/{id}/` for edit)
+### Tab 3 — Billing (Business role only, hidden for Free/Admin)
+- Current plan: "Business — $49/month"
+- Next billing date: hardcoded or from a mock field (e.g.
+  "August 1, 2026")
+- Number of devices: current count vs plan limit (e.g. "3 / 10
+  devices") shown as a progress bar using `--accent` color
+- Usage this month: a simple bar showing "X alert events logged"
+  vs a monthly cap
+- Invoice history: a small table with 3-4 mock rows
+  (Date, Amount, Status: "Paid" green badge, Download PDF link
+  that shows a toast "PDF generation coming soon")
+- Cancel plan button (red, opens a confirmation modal)
 
-### Delete confirmation
-Clicking the delete (trash) icon on a card opens a small confirmation
-popover (NOT a full modal — use shadcn/ui `Popover`): "Delete
-[driver name]? This cannot be undone." with Cancel and Delete buttons.
-DELETE request to `DELETE /api/drivers/{id}/`.
+### Tab 4 — Notifications (settings, not the panel)
+- Toggle: "Email alerts for Level 3 events" (on/off, saved via API)
+- Toggle: "Browser push notifications" (on/off — request permission
+  via `Notification.requestPermission()` if turned on)
+- Toggle: "Sound alerts" (on/off, saved to localStorage)
+- Alarm sensitivity: a slider or select for "Notify me at Level:"
+  (1 / 2 / 3) — saves to localStorage
 
-### Driver detail (clicking driver name/avatar)
-Navigates to `/drivers/{id}` — reuse the existing Driver Detail page,
-just link it from here.
+### Tab 5 — Devices
+- List of all devices owned by the current user
+  (`GET /api/devices/`)
+- Each row: Device ID, status dot (online/offline), last seen
+  timestamp, assigned driver name
+- "Add device" button → opens a simple modal with Device ID +
+  friendly name fields
 
-**Visual:**
-- Driver cards use the same glassmorphism style
-- Avatar: a circle with the driver's initials, background color
-  derived from the driver name string (consistent hash → one of 6
-  preset `--accent` shade variants) — never a random color on re-render
-- Status badge (Online/Offline) is a small colored dot + text, same
-  pattern as the device status dots already in the project
-- Card hover: `translateY(-3px)` lift + `--border-glow` intensifies
-  (same micro-interaction pattern as existing cards)
-- Empty state for search: "No drivers match your search"
-- Empty state for no drivers yet: "No drivers added yet" + prominent
-  "Add your first driver" CTA button
-
----
-
-## BACKEND ADDITIONS NEEDED
-
-Add these DRF endpoints if they don't already exist:
-- `GET/POST /api/drivers/` — list and create
-- `GET/PATCH/DELETE /api/drivers/{id}/` — retrieve, update, delete
-- `GET /api/devices/?unassigned=true` — devices without a driver
-
-Add a `Driver` model if it doesn't exist:
-```
-Driver
-  - full_name (CharField)
-  - vehicle_plate (CharField)
-  - device (OneToOneField Device, nullable)
-  - phone (CharField, nullable)
-  - notes (TextField, nullable)
-  - owner (ForeignKey User)
-  - created_at
-```
+**Visual for Settings:**
+- Left tab nav uses the same sidebar style (glassmorphism, active
+  state with accent color, Framer Motion layout animation on active
+  indicator)
+- Content area is a glassmorphism card
+- All form inputs match the existing design system
+- Section headings use `--text-muted`, slightly smaller than body
 
 ---
 
-After completing all 3 pages, show me the result. Do NOT proceed to
-Prompt 3 yet.
+After completing both features, show me the result. Do NOT proceed to
+Prompt 4 yet.

@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   LayoutDashboard, History, BarChart3, Settings,
-  Bell, LogOut, ChevronDown, Users,
+  LogOut, ChevronDown, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "nav.fleet" },
@@ -107,10 +108,7 @@ export default function DashboardLayout() {
 
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="btn-press relative rounded-2xl">
-              <Bell size={16} />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-danger" />
-            </Button>
+            <NotificationCenter />
 
             {/* User avatar + role dropdown */}
             <DropdownMenu.Root>
@@ -155,7 +153,7 @@ export default function DashboardLayout() {
                       className="mt-2 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono"
                       style={{ background: "rgba(var(--accent-rgb,108,142,255),0.18)", color: "var(--accent)" }}
                     >
-                      {user?.role ?? "free"}
+                      {t(`role.${user?.role ?? "free"}`)}
                     </span>
                   </div>
 
@@ -168,7 +166,7 @@ export default function DashboardLayout() {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] outline-none select-none cursor-default transition-colors duration-150 data-[highlighted]:bg-white/5 data-[disabled]:opacity-40"
                     style={{ color: user?.role === "business" ? "var(--text-muted)" : "var(--text-primary)" }}
                   >
-                    {user?.role === "business" ? "Upgrade to Business" : "Contact admin"}
+                    {user?.role === "business" ? t("settings.upgrade_business") : t("settings.contact_admin")}
                   </DropdownMenu.Item>
 
                   <DropdownMenu.Separator className="h-px my-1" style={{ background: "rgba(138,148,255,0.15)" }} />
