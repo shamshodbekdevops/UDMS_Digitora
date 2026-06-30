@@ -28,7 +28,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.password2) {
-      setError("Parollar mos kelmaydi");
+      setError(t("auth.password_mismatch"));
       return;
     }
     setError("");
@@ -49,7 +49,7 @@ export default function Register() {
 
   const ROLE_OPTIONS: { value: Role; titleKey: string; descKey: string; badge?: string }[] = [
     { value: "free",     titleKey: "auth.role_free",     descKey: "auth.role_free_desc" },
-    { value: "business", titleKey: "auth.role_business", descKey: "auth.role_business_desc", badge: "$29/mo" },
+    { value: "business", titleKey: "auth.role_business", descKey: "auth.role_business_desc", badge: t("auth.business_badge") },
   ];
 
   return (
@@ -104,7 +104,7 @@ export default function Register() {
               <Label htmlFor="reg-username">{t("auth.username")}</Label>
               <Input
                 id="reg-username"
-                placeholder="username"
+                placeholder={t("auth.username_ph")}
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 required
@@ -116,7 +116,7 @@ export default function Register() {
               <Input
                 id="reg-email"
                 type="email"
-                placeholder="email@example.com"
+                placeholder={t("auth.email_ph")}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
@@ -128,7 +128,7 @@ export default function Register() {
                 <Label htmlFor="company">{t("auth.company")}</Label>
                 <Input
                   id="company"
-                  placeholder="Logistics Co."
+                  placeholder={t("auth.company_ph")}
                   value={form.company_name}
                   onChange={(e) => setForm({ ...form, company_name: e.target.value })}
                 />
@@ -142,7 +142,7 @@ export default function Register() {
                   <Input
                     id="pw"
                     type={showPw ? "text" : "password"}
-                    placeholder="••••••"
+                    placeholder={t("auth.password_ph")}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
@@ -162,7 +162,7 @@ export default function Register() {
                 <Input
                   id="pw2"
                   type={showPw ? "text" : "password"}
-                  placeholder="••••••"
+                  placeholder={t("auth.password_ph")}
                   value={form.password2}
                   onChange={(e) => setForm({ ...form, password2: e.target.value })}
                   required

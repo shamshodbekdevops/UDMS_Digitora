@@ -16,8 +16,8 @@ const config: Config = {
         "text-muted":  "var(--text-muted)",
 
         // Static hex — bg-accent/10 kabi opacity modifier uchun
-        accent:       "#E8762C",
-        "accent-warm":"#D85F1C",
+        accent:       "#6C8EFF",
+        "accent-warm":"#4A7FEB",
         safe:    "#3DDC84",
         caution: "#F2C94C",
         warning: "#FF8A3D",

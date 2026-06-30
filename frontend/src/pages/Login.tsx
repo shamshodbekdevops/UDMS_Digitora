@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Loader2, User, Lock, Car, Shield, Wifi } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
-import { useThemeStore } from "@/store/theme";
 import type { User as UserType, AuthTokens } from "@/types";
 
 /* ──────────────────────────────────────────
@@ -169,10 +168,9 @@ function IconInput({
    PAGE
 ══════════════════════════════════════════ */
 export default function Login() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
-  const { isDark } = useThemeStore();
 
   const [form, setForm] = useState({ username: "", password: "" });
   const [showPw, setShowPw] = useState(false);
@@ -206,12 +204,6 @@ export default function Login() {
       setLoading(false);
     }
   };
-
-  const LANGS = [
-    { code: "uz", flag: "🇺🇿", label: "O'zbekcha" },
-    { code: "en", flag: "🇬🇧", label: "English" },
-    { code: "ko", flag: "🇰🇷", label: "한국어" },
-  ];
 
   return (
     <div className="page-shell min-h-screen flex flex-col lg:flex-row text-text-primary">
@@ -262,34 +254,34 @@ export default function Login() {
                 DIGITORA
               </p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3 }}>
-                Driver Monitoring System
+                {t("auth.hero_brand_subtitle")}
               </p>
             </div>
           </div>
 
           {/* Main headline */}
           <h1 className="font-display font-black text-white leading-tight mb-2" style={{ fontSize: 36 }}>
-            {isDark ? "Haydovchi\nxavfsizligi" : "Haydovchi xavfsizligi"}
+            {t("auth.hero_line1")}
           </h1>
           <h1 className="font-display font-black leading-tight mb-2" style={{ fontSize: 36, color: "rgba(255,255,255,0.55)" }}>
-            real vaqtda
+            {t("auth.hero_line2")}
           </h1>
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 15, marginTop: 10, marginBottom: 40, lineHeight: 1.6 }}>
-            PERCLOS texnologiyasi yordamida uyqu va charchashni aniqlash. KOICA ODA loyihasi.
+            {t("auth.hero_description")}
           </p>
 
           {/* Stats */}
           <div className="flex flex-col gap-3">
-            <HeroStat icon={<Car size={18} />} value="9" label="Faol haydovchi" delay="0.1s" />
-            <HeroStat icon={<Shield size={18} />} value="99.2%" label="Tizim ishlash vaqti" delay="0.22s" />
-            <HeroStat icon={<Wifi size={18} />} value="15ms" label="Real vaqt kechikishi" delay="0.34s" />
+            <HeroStat icon={<Car size={18} />} value="9" label={t("auth.hero_stat_drivers")} delay="0.1s" />
+            <HeroStat icon={<Shield size={18} />} value="99.2%" label={t("auth.hero_stat_uptime")} delay="0.22s" />
+            <HeroStat icon={<Wifi size={18} />} value="15ms" label={t("auth.hero_stat_latency")} delay="0.34s" />
           </div>
 
           {/* Bottom badge */}
           <div className="mt-10 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
             <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}>
-              LIVE · AI-powered · KOICA 2026
+              {t("auth.hero_live_badge")}
             </span>
           </div>
         </div>
@@ -325,10 +317,10 @@ export default function Login() {
             {/* Heading */}
             <div className="mb-7">
               <h2 className="font-display font-black text-text-primary" style={{ fontSize: 26 }}>
-                Xush kelibsiz
+                {t("auth.welcome")}
               </h2>
               <p className="text-text-muted mt-1 font-medium" style={{ fontSize: 14 }}>
-                DIGITORA DMS · Dispetcher panel
+                {t("auth.login_subtitle")}
               </p>
             </div>
 
@@ -340,7 +332,7 @@ export default function Login() {
                 </label>
                 <IconInput
                   id="username"
-                  placeholder="dispatcher"
+                  placeholder={t("auth.username_ph")}
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   required
@@ -356,7 +348,7 @@ export default function Login() {
                 <IconInput
                   id="password"
                   type={showPw ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder={t("auth.password_ph")}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
@@ -397,7 +389,7 @@ export default function Login() {
                 }}
               >
                 {loading ? (
-                  <><Loader2 size={16} className="animate-spin" /> Tekshirilmoqda…</>
+                  <><Loader2 size={16} className="animate-spin" /> {t("auth.checking")}</>
                 ) : (
                   <>{t("auth.login_btn")} <span style={{ fontSize: 18 }}>→</span></>
                 )}
@@ -429,27 +421,8 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Language switcher */}
-          <div className="flex justify-center gap-2 mt-4">
-            {LANGS.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => i18n.changeLanguage(l.code)}
-                className="text-xs px-3.5 py-2 rounded-full font-semibold transition-all duration-200"
-                style={{
-                  background: i18n.language === l.code ? "var(--accent)" : "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: i18n.language === l.code ? "white" : "var(--text-muted)",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                {l.flag} {l.label}
-              </button>
-            ))}
-          </div>
-
           <p className="text-center text-[11px] text-text-muted mt-5 font-mono">
-            KOICA ODA · DIGITORA v1.0 · 2026
+            {t("auth.footer_line")}
           </p>
         </div>
       </div>

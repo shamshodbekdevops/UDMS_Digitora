@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebRTC Test — DIGITORA DMS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "JetBrains Mono", monospace;
+      background: #05060F;
+      color: #EDEFFC;
+      padding: 32px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 20px; font-weight: 900; color: #E8762C; letter-spacing: 0.12em; margin-bottom: 4px; }
+    p  { font-size: 12px; color: #8A8FB5; margin-bottom: 24px; }
+    .card {
+      background: rgba(20,22,38,0.7);
+      border: 1px solid rgba(138,148,255,0.18);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 720px;
+    }
+    .row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    input {
+      flex: 1; padding: 10px 14px; border-radius: 10px;
+      background: rgba(28,30,50,0.9); border: 1.5px solid rgba(138,148,255,0.2);
+      color: #EDEFFC; font-family: monospace; font-size: 13px; outline: none;
+    }
+    input:focus { border-color: #E8762C; box-shadow: 0 0 0 3px rgba(232,118,44,0.15); }
+    button {
+      padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #D85F1C, #E8762C);
+      color: white; font-weight: 700; font-size: 13px; font-family: monospace;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #status {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 9999px;
+      background: rgba(138,148,255,0.08);
+      border: 1px solid rgba(138,148,255,0.18);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+      margin-bottom: 16px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #8A8FB5; flex-shrink: 0;
+    }
+    .dot.live    { background: #3DDC84; animation: pulse 1.2s ease-in-out infinite; }
+    .dot.offline { background: #FF4757; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    video {
+      width: 100%; max-width: 640px; aspect-ratio: 4/3;
+      border-radius: 12px;
+      border: 1.5px solid rgba(138,148,255,0.15);
+      background: #010209;
+      display: block;
+    }
+    .note { font-size: 11px; color: #5A6080; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>DIGITORA — WebRTC Kamera Testi</h1>
+  <p>windows.py ning aiortc serveri ishlab turganida ulan (port 8080)</p>
+
+  <div class="card">
+    <div class="row">
+      <input id="url" value="http://localhost:8080/offer" placeholder="WebRTC offer URL" />
+      <button id="btn" onclick="toggle()">Ulanish</button>
+    </div>
+
+    <div id="status">
+      <div class="dot" id="dot"></div>
+      <span id="status-text">Tayyor</span>
+    </div>
+
+    <video id="vid" autoplay playsinline muted></video>
+
+    <p class="note">
+      ✓ Brauzer STUN orqali ICE kandidatlarini topadi<br>
+      ✓ Muvaffaqiyatli bo'lsa status "LIVE" ga o'zgaradi<br>
+      ✓ windows.py konsolida "WebRTC connected" ko'rinishi kerak
+    </p>
+  </div>
+
+  <script>
+    let pc = null;
+    let connected = false;
+
+    function setStatus(text, type) {
+      document.getElementById('status-text').textContent = text;
+      const dot = document.getElementById('dot');
+      dot.className = 'dot ' + (type || '');
+    }
+
+    async function connect() {
+      const url = document.getElementById('url').value.trim();
+      if (!url) return;
+
+      document.getElementById('btn').disabled = true;
+      setStatus('Ulanmoqda…', '');
+
+      pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+
+      pc.addEventListener('track', (ev) => {
+        if (ev.streams && ev.streams[0]) {
+          document.getElementById('vid').srcObject = ev.streams[0];
+          setStatus('LIVE ✓', 'live');
+          document.getElementById('btn').textContent = 'Uzish';
+          document.getElementById('btn').disabled = false;
+          connected = true;
+        }
+      });
+
+      pc.addEventListener('connectionstatechange', () => {
+        const s = pc.connectionState;
+        if (s === 'failed' || s === 'disconnected') {
+          setStatus('Uzildi — ' + s, 'offline');
+          document.getElementById('btn').textContent = 'Ulanish';
+          document.getElementById('btn').disabled = false;
+          connected = false;
+        }
+      });
+
+      pc.addTransceiver('video', { direction: 'recvonly' });
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sdp: offer.sdp, type: offer.type }),
+        });
+
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const answer = await res.json();
+        await pc.setRemoteDescription(answer);
+        setStatus('SDP almashuv tugadi — track kutilmoqda…', '');
+
+      } catch (err) {
+        setStatus('Xatolik: ' + err.message, 'offline');
+        document.getElementById('btn').textContent = 'Ulanish';
+        document.getElementById('btn').disabled = false;
+        console.error(err);
+      }
+    }
+
+    function disconnect() {
+      if (pc) { pc.close(); pc = null; }
+      document.getElementById('vid').srcObject = null;
+      setStatus('Uzildi', 'offline');
+      document.getElementById('btn').textContent = 'Ulanish';
+      connected = false;
+    }
+
+    function toggle() {
+      connected ? disconnect() : connect();
+    }
+  </script>
+</body>
+</html>

@@ -10,12 +10,16 @@ import { ArrowLeft, Gauge, Eye, Thermometer, Droplets, MapPin } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RiskPulse } from "@/components/RiskPulse";
+import { LiveCameraFeed } from "@/components/LiveCameraFeed";
 import { api } from "@/lib/api";
 import { useFleetStore } from "@/store/fleet";
 import { ALARM_COLOR, formatRelativeTime } from "@/lib/utils";
 import type { AlertEvent, AlarmLevel } from "@/types";
 
-const ALARM_LABEL = ["Xavfsiz", "Ehtiyot", "Ogohlantirish", "XAVF!"];
+// WebRTC stream URL from .env — change per device in production
+const STREAM_URL = import.meta.env.VITE_STREAM_BASE_URL
+  ? `${import.meta.env.VITE_STREAM_BASE_URL}/offer`
+  : null;
 const BADGE_VARIANT = ["safe", "caution", "warning", "danger"] as const;
 
 interface ChartPoint {
@@ -56,6 +60,7 @@ export default function DriverDetail() {
     }));
 
   const level = device?.live?.alarm_level ?? 0;
+  const alarmLabels = [t("alarm.level0"), t("alarm.level1"), t("alarm.level2"), t("alarm.level3")];
   const counts = [0, 0, 0, 0];
   events.forEach((e) => counts[e.alarm_level]++);
 
@@ -78,21 +83,41 @@ export default function DriverDetail() {
             </p>
           </div>
           <Badge variant={BADGE_VARIANT[level]} className="ml-auto">
-            {ALARM_LABEL[level]}
+            {alarmLabels[level]}
           </Badge>
         </div>
       </motion.div>
+
+      {/* Live camera feed — WebRTC (prominent, full-width) */}
+      {STREAM_URL && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 }}>
+          <div className="glass rounded-2xl p-3">
+            <div className="flex items-center gap-2 mb-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
+              <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+                Jonli kamera oqimi
+              </span>
+            </div>
+            <LiveCameraFeed
+              deviceId={deviceId ?? ""}
+              streamUrl={STREAM_URL}
+              alarmLevel={level as AlarmLevel}
+            />
+          </div>
+        </motion.div>
+      )}
 
       {/* Live stats cards */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={<Eye size={16} className="text-warning" />}
-          label="PERCLOS"
+          label={t("device.perclos")}
           value={`${((device?.live?.perclos ?? 0) * 100).toFixed(0)}%`}
           color="warning" />
         <StatCard icon={<Gauge size={16} className="text-safe" />}
           label={t("device.speed")}
-          value={`${(device?.live?.gps_speed ?? 0).toFixed(0)} km/h`}
+          value={`${(device?.live?.gps_speed ?? 0).toFixed(0)} ${t("common.km_h")}`}
           color="safe" />
         {events[0]?.cabin_temp != null && (
           <StatCard icon={<Thermometer size={16} className="text-caution" />}
@@ -142,7 +167,7 @@ export default function DriverDetail() {
                   color: "#EDEFFC",
                   fontSize: 12,
                 }}
-                formatter={(v: number) => [`${v}%`, "PERCLOS"]}
+                formatter={(v: number) => [`${v}%`, t("device.perclos")]} 
               />
               <Area
                 type="monotone"
@@ -171,7 +196,7 @@ export default function DriverDetail() {
         ) : (
           <ResponsiveContainer width="100%" height={120}>
             <BarChart data={[0,1,2,3].map((lvl) => ({
-              name: ALARM_LABEL[lvl],
+              name: alarmLabels[lvl],
               count: counts[lvl],
               color: ALARM_COLOR[lvl as AlarmLevel],
             }))} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>

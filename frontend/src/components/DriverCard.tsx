@@ -1,10 +1,15 @@
 import { useRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RiskPulse } from "@/components/RiskPulse";
+import { LiveCameraFeed } from "@/components/LiveCameraFeed";
 import { Badge } from "@/components/ui/badge";
 import { ALARM_TEXT_CLASS, ALARM_BG_CLASS, formatRelativeTime } from "@/lib/utils";
 import { Gauge, Eye, Wifi } from "lucide-react";
-import type { Device } from "@/types";
+import type { Device, AlarmLevel } from "@/types";
+
+const STREAM_URL = import.meta.env.VITE_STREAM_BASE_URL
+  ? `${import.meta.env.VITE_STREAM_BASE_URL}/offer`
+  : null;
 
 const BADGE_VARIANT = ["safe", "caution", "warning", "danger"] as const;
 
@@ -103,6 +108,18 @@ export function DriverCard({ device, onClick }: Props) {
             </span>
           )}
         </div>
+
+        {/* Mini video thumbnail — only when stream URL is configured */}
+        {STREAM_URL && (
+          <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+            <LiveCameraFeed
+              deviceId={device.device_id}
+              streamUrl={STREAM_URL}
+              alarmLevel={level as AlarmLevel}
+              small
+            />
+          </div>
+        )}
       </div>
     </button>
   );

@@ -11,10 +11,10 @@
   --surface-el:   rgba(28, 30, 50, 0.78);
   --border:       rgba(138, 148, 255, 0.15);
   --border-glow:  rgba(138, 148, 255, 0.4);
-  --accent:       #E8762C;
-  --accent-rgb:   232, 118, 44;
-  --accent-warm:  #E8762C;
-  --accent-warm-rgb: 232, 118, 44;
+  --accent:       #6C8EFF;
+  --accent-rgb:   108, 142, 255;
+  --accent-warm:  #6C8EFF;
+  --accent-warm-rgb: 108, 142, 255;
   --text-primary: #EDEFFC;
   --text-muted:   #8A8FB5;
   --safe:         #3DDC84;
@@ -34,8 +34,8 @@ html.light {
   --border-glow:  #A9CCEF;
   --accent:       #2B6FE0;
   --accent-rgb:   43, 111, 224;
-  --accent-warm:  #D85F1C;
-  --accent-warm-rgb: 216, 95, 28;
+  --accent-warm:  #2B6FE0;
+  --accent-warm-rgb: 43, 111, 224;
   --text-primary: #14202E;
   --text-muted:   #5A7088;
   --safe:         #1FAE6E;

@@ -1,0 +1,9 @@
+# DIGITORA DMS — windows.py uchun kutubxonalar
+# O'rnatish: pip install -r requirements-windows.txt
+
+opencv-python>=4.8.0
+mediapipe>=0.10.0
+websockets>=12.0
+aiortc>=1.6.0
+aiohttp>=3.9.0
+av>=11.0.0

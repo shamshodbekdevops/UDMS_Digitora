@@ -58,17 +58,22 @@ function useCountUp(target: number, duration = 500): number {
 /* ─────────────────────────────────────────
    Level metadata
 ───────────────────────────────────────── */
-const LEVEL_META = [
-  { label: "Xavfsiz",       color: "#3DDC84", bg: "rgba(61,220,132,0.1)",  icon: CheckCircle2 },
-  { label: "Ehtiyot",       color: "#F2C94C", bg: "rgba(242,201,76,0.1)",  icon: Activity },
-  { label: "Ogohlantirish", color: "#FF8A3D", bg: "rgba(255,138,61,0.1)",  icon: AlertTriangle },
-  { label: "XAVF!",         color: "#FF4757", bg: "rgba(255,71,87,0.12)",  icon: AlertTriangle },
-];
+function useLevelMeta() {
+  const { t } = useTranslation();
+  return useMemo(() => ([
+    { label: t("alarm.level0"), color: "#3DDC84", bg: "rgba(61,220,132,0.1)", icon: CheckCircle2 },
+    { label: t("alarm.level1"), color: "#F2C94C", bg: "rgba(242,201,76,0.1)", icon: Activity },
+    { label: t("alarm.level2"), color: "#FF8A3D", bg: "rgba(255,138,61,0.1)", icon: AlertTriangle },
+    { label: t("alarm.level3"), color: "#FF4757", bg: "rgba(255,71,87,0.12)", icon: AlertTriangle },
+  ]), [t]);
+}
 
 /* ─────────────────────────────────────────
    KPI metrics row
 ───────────────────────────────────────── */
 function KpiRow({ counts, total }: { counts: number[]; total: number }) {
+  const { t } = useTranslation();
+  const levelMeta = useLevelMeta();
   const health = total > 0
     ? Math.round((counts[0] * 100 + counts[1] * 72 + counts[2] * 38 + counts[3] * 0) / total)
     : 100;
@@ -96,7 +101,7 @@ function KpiRow({ counts, total }: { counts: number[]; total: number }) {
           <TrendingUp size={16} style={{ color: healthColor }} />
         </div>
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">Fleet Health</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">{t("dashboard.fleet_health")}</div>
           <div className="font-display font-black tabular-nums leading-none" style={{ fontSize: 28, color: healthColor }}>
             {Math.round(animHealth)}<span style={{ fontSize: 14, opacity: 0.7 }}>%</span>
           </div>
@@ -107,16 +112,16 @@ function KpiRow({ counts, total }: { counts: number[]; total: number }) {
       <div className="flex flex-col items-center justify-center px-5 py-3 min-w-[88px]">
         <div className="flex items-center gap-1.5 mb-1">
           <Cpu size={10} className="text-text-muted" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Jami</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{t("dashboard.total")}</span>
         </div>
         <div className="font-display font-black text-text-primary tabular-nums" style={{ fontSize: 26 }}>
           {Math.round(animTotal)}
         </div>
-        <div className="text-[10px] text-text-muted font-medium mt-0.5">haydovchi</div>
+        <div className="text-[10px] text-text-muted font-medium mt-0.5">{t("dashboard.drivers_suffix")}</div>
       </div>
 
       {/* Per-level */}
-      {LEVEL_META.map((meta, lvl) => {
+      {levelMeta.map((meta, lvl) => {
         const Icon = meta.icon;
         const isDanger = lvl === 3 && counts[lvl] > 0;
         return (
@@ -159,13 +164,13 @@ function KpiRow({ counts, total }: { counts: number[]; total: number }) {
       <div className="hidden xl:flex flex-col items-center justify-center px-5 py-3 min-w-[100px]">
         <div className="flex items-center gap-1.5 mb-1">
           <Signal size={10} className="text-safe" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Status</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{t("dashboard.status")}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-safe animate-pulse" />
-          <span className="font-mono font-bold text-safe" style={{ fontSize: 13 }}>LIVE</span>
+          <span className="font-mono font-bold text-safe" style={{ fontSize: 13 }}>{t("dashboard.live")}</span>
         </div>
-        <div className="text-[10px] text-text-muted font-mono mt-1">Mock WS</div>
+        <div className="text-[10px] text-text-muted font-mono mt-1">{t("ws.mock")}</div>
       </div>
     </div>
   );
@@ -175,6 +180,7 @@ function KpiRow({ counts, total }: { counts: number[]; total: number }) {
    Critical alert sticky banner
 ───────────────────────────────────────── */
 function CriticalBanner({ count, names }: { count: number; names: string[] }) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {count > 0 && (
@@ -199,14 +205,14 @@ function CriticalBanner({ count, names }: { count: number; names: string[] }) {
             >
               <AlertTriangle size={12} style={{ color: "#FF4757" }} />
             </div>
-            <span className="text-sm font-black" style={{ color: "#FF4757" }}>KRITIK XAVF:</span>
+            <span className="text-sm font-black" style={{ color: "#FF4757" }}>{t("dashboard.critical_alert_prefix")}</span>
             <span className="text-sm font-semibold text-text-primary truncate">
-              {names.slice(0, 3).join(", ")}{names.length > 3 ? ` +${names.length - 3} ta` : ""}
+              {names.slice(0, 3).join(", ")}{names.length > 3 ? ` +${names.length - 3} ${t("dashboard.more_suffix")}` : ""}
             </span>
-            <span className="text-sm text-text-muted">— darhol choralar ko'ring!</span>
+            <span className="text-sm text-text-muted">— {t("dashboard.critical_alert_suffix")}</span>
             <div className="ml-auto shrink-0 font-mono font-bold text-xs flex items-center gap-1.5" style={{ color: "#FF4757" }}>
               <span className="animate-pulse">▶</span>
-              {count} ta haydovchi
+              {t("dashboard.critical_count", { count })}
             </div>
           </div>
         </motion.div>
@@ -336,7 +342,7 @@ export default function Dashboard() {
               >
                 <div className="w-2 h-2 rounded-full bg-safe animate-pulse" />
                 <span className="text-xs font-bold text-white tracking-wide">{t("dashboard.live_map")}</span>
-                <span className="text-[10px] font-mono text-white/50 ml-1">{devices.length} qurilma</span>
+                <span className="text-[10px] font-mono text-white/50 ml-1">{devices.length} {t("dashboard.devices_label")}</span>
               </div>
             </div>
 
@@ -347,12 +353,12 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-1.5 text-[10px] text-white/50 mb-1.5">
                   <Layers size={10} />
-                  <span className="font-bold uppercase tracking-widest">Belgilar</span>
+                  <span className="font-bold uppercase tracking-widest">{t("dashboard.legend")}</span>
                 </div>
                 {([0, 1, 2, 3] as const).map((lvl) => (
                   <div key={lvl} className="flex items-center gap-2.5 text-[11px]">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ALARM_COLOR[lvl] }} />
-                    <span className="text-white/65">{LEVEL_META[lvl].label}</span>
+                    <span className="text-white/65">{t(`alarm.level${lvl}`)}</span>
                     <span className="ml-auto font-mono font-bold text-white tabular-nums">{counts[lvl]}</span>
                   </div>
                 ))}
@@ -377,9 +383,9 @@ export default function Dashboard() {
               </div>
               <div className="flex gap-1.5">
                 <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}
-                  label="Barchasi" count={devices.length} color="var(--text-muted)" />
+                  label={t("dashboard.filter_all")} count={devices.length} color="var(--text-muted)" />
                 <FilterBtn active={filter === "alert"} onClick={() => setFilter("alert")}
-                  label="Ogohlantirishlar" count={counts[1] + counts[2] + counts[3]}
+                  label={t("dashboard.filter_alerts")} count={counts[1] + counts[2] + counts[3]}
                   color={counts[1] + counts[2] + counts[3] > 0 ? "#FF8A3D" : "var(--text-muted)"} />
               </div>
             </div>
@@ -393,8 +399,8 @@ export default function Dashboard() {
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     className="flex flex-col items-center justify-center py-16 text-text-muted">
                     <CheckCircle2 size={32} className="text-safe mb-2 opacity-60" />
-                    <p className="text-sm font-semibold">Hamma haydovchi xavfsiz</p>
-                    <p className="text-xs mt-1 opacity-70">Ogohlantirishlar yo'q</p>
+                    <p className="text-sm font-semibold">{t("dashboard.all_safe")}</p>
+                    <p className="text-xs mt-1 opacity-70">{t("dashboard.no_alerts")}</p>
                   </motion.div>
                 ) : (
                   sorted.map((device) => (
@@ -422,7 +428,7 @@ export default function Dashboard() {
               ))}
               <div className="ml-auto flex items-center gap-1.5 text-[10px] text-text-muted font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-safe inline-block animate-pulse" />
-                LIVE
+                {t("dashboard.live")}
               </div>
             </div>
           </div>

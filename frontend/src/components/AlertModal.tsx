@@ -49,7 +49,7 @@ const cardVariants = {
 };
 
 export function AlertModal({ packet, onDismiss }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Beep chalganda + keyboard Esc bilan yopish
   useEffect(() => {
@@ -60,7 +60,7 @@ export function AlertModal({ packet, onDismiss }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [packet, onDismiss]);
 
-  const time = packet ? new Date(packet.timestamp).toLocaleTimeString("uz-UZ") : "";
+  const time = packet ? new Date(packet.timestamp).toLocaleTimeString(i18n.language) : "";
 
   return (
     <AnimatePresence>
@@ -136,10 +136,10 @@ export function AlertModal({ packet, onDismiss }: Props) {
                   </p>
                   <div className="mt-2 flex items-center gap-1 text-sm text-text-muted">
                     <span className="font-mono font-bold text-warning text-[14px]">
-                      PERCLOS {(packet.perclos * 100).toFixed(0)}%
+                      {t("device.perclos")} {(packet.perclos * 100).toFixed(0)}%
                     </span>
                     {packet.gps?.speed != null && (
-                      <span className="ml-2">{packet.gps.speed.toFixed(0)} km/h</span>
+                      <span className="ml-2">{packet.gps.speed.toFixed(0)} {t("common.km_h")}</span>
                     )}
                   </div>
                 </div>

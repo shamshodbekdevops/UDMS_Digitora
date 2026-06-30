@@ -1,40 +1,14 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   LayoutDashboard, History, BarChart3, Settings,
-  Moon, Sun, Bell, LogOut, ChevronDown,
+  Bell, LogOut, ChevronDown,
 } from "lucide-react";
-import { useThemeStore } from "@/store/theme";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-function LiveClock() {
-  const [time, setTime] = useState(() =>
-    new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
-  );
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTime(new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/50"
-      style={{ background: "var(--surface-el)" }}>
-      <span className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
-      <span className="font-mono font-bold text-text-primary tabular-nums" style={{ fontSize: 13 }}>{time}</span>
-    </div>
-  );
-}
-
-const LANGS = [
-  { code: "uz", flag: "🇺🇿", label: "O'z" },
-  { code: "en", flag: "🇬🇧", label: "EN" },
-  { code: "ko", flag: "🇰🇷", label: "한국" },
-];
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "nav.fleet" },
@@ -43,8 +17,7 @@ const NAV_ITEMS = [
 ];
 
 export default function DashboardLayout() {
-  const { t, i18n } = useTranslation();
-  const { isDark, toggle } = useThemeStore();
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const location = useLocation();
 
@@ -56,8 +29,8 @@ export default function DashboardLayout() {
       <aside className="relative z-10 w-64 shrink-0 flex flex-col glass border-r border-border/50">
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border/50">
-          <div className="h-10 w-10 rounded-2xl flex items-center justify-center shadow-lg shadow-[rgba(var(--accent-rgb),0.25)]"
-            style={{ background: "linear-gradient(135deg, var(--accent-warm), var(--accent))" }}>
+          <div className="h-10 w-10 rounded-2xl flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #D85F1C, #E8762C)", boxShadow: "0 8px 24px rgba(232,118,44,0.3)" }}>
             <span className="text-white font-display font-bold text-sm">DG</span>
           </div>
           <div>
@@ -87,7 +60,7 @@ export default function DashboardLayout() {
                       <motion.div
                         layoutId="nav-blob"
                         className="absolute inset-0 rounded-2xl"
-                        style={{ background: "rgba(var(--accent-rgb, 232,118,44), 0.14)", boxShadow: "inset 0 0 0 1px rgba(var(--accent-rgb, 232,118,44), 0.18)" }}
+                        style={{ background: "rgba(var(--accent-rgb, 108,142,255), 0.14)", boxShadow: "inset 0 0 0 1px rgba(var(--accent-rgb, 108,142,255), 0.18)" }}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -132,62 +105,85 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live clock */}
-            <LiveClock />
-
-            {/* Language */}
-            <div className="flex items-center rounded-2xl border border-border overflow-hidden glass">
-              {LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => i18n.changeLanguage(l.code)}
-                  className={cn(
-                    "px-3 py-2 text-[13px] transition-all duration-200",
-                    i18n.language === l.code
-                      ? "bg-accent text-white shadow-sm"
-                      : "text-text-muted hover:text-text-primary hover:bg-surface-el"
-                  )}
-                >
-                  {l.flag} {l.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Theme toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggle}
-              className="btn-press rounded-2xl"
-              title={isDark ? t("theme.light") : t("theme.dark")}
-            >
-              <motion.div
-                key={isDark ? "moon" : "sun"}
-                initial={{ rotate: -30, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.25 }}
-              >
-                {isDark ? <Sun size={16} /> : <Moon size={16} />}
-              </motion.div>
-            </Button>
-
             {/* Notifications */}
             <Button variant="ghost" size="icon" className="btn-press relative rounded-2xl">
               <Bell size={16} />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-danger" />
             </Button>
 
-            {/* User avatar */}
-            <button className="flex items-center gap-2 px-3 py-2 rounded-2xl hover:bg-surface-el transition-all duration-200">
-              <div className="h-8 w-8 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(var(--accent-rgb, 232,118,44),0.18)" }}>
-                <span className="text-accent text-xs font-bold font-display">
-                  {user?.username?.[0]?.toUpperCase()}
-                </span>
-              </div>
-              <span className="text-[15px] text-text-primary">{user?.username}</span>
-              <ChevronDown size={12} className="text-text-muted" />
-            </button>
+            {/* User avatar + role dropdown */}
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 rounded-2xl hover:bg-surface-el transition-all duration-200 outline-none">
+                  <div className="h-8 w-8 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(var(--accent-rgb, 108,142,255),0.18)" }}>
+                    <span className="text-accent text-xs font-bold font-display">
+                      {user?.username?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="hidden sm:inline text-[15px] text-text-primary">{user?.username}</span>
+                  {user?.role && (
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase font-mono"
+                      style={{ background: "rgba(var(--accent-rgb,108,142,255),0.18)", color: "var(--accent)" }}
+                    >
+                      {user.role}
+                    </span>
+                  )}
+                  <ChevronDown size={12} className="text-text-muted" />
+                </button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  sideOffset={8}
+                  className="z-[2000] min-w-[220px] rounded-2xl p-2 outline-none"
+                  style={{
+                    background: "rgba(20,22,38,0.96)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(138,148,255,0.18)",
+                    boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  {/* Profile header */}
+                  <div className="px-3 py-2.5 mb-1">
+                    <p className="text-[13px] font-bold text-text-primary">{user?.username}</p>
+                    <p className="text-[11px] text-text-muted mt-0.5 font-mono">{user?.email}</p>
+                    <span
+                      className="mt-2 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono"
+                      style={{ background: "rgba(var(--accent-rgb,108,142,255),0.18)", color: "var(--accent)" }}
+                    >
+                      {user?.role ?? "free"}
+                    </span>
+                  </div>
+
+                  <DropdownMenu.Separator className="h-px my-1" style={{ background: "rgba(138,148,255,0.15)" }} />
+
+                  {/* Switch role */}
+                  <DropdownMenu.Item
+                    disabled={user?.role === "business"}
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] outline-none select-none cursor-default transition-colors duration-150 data-[highlighted]:bg-white/5 data-[disabled]:opacity-40"
+                    style={{ color: user?.role === "business" ? "var(--text-muted)" : "var(--text-primary)" }}
+                  >
+                    {user?.role === "business" ? "Upgrade to Business" : "Contact admin"}
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Separator className="h-px my-1" style={{ background: "rgba(138,148,255,0.15)" }} />
+
+                  {/* Sign out */}
+                  <DropdownMenu.Item
+                    onSelect={logout}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] outline-none select-none cursor-default transition-colors duration-150 data-[highlighted]:bg-danger/10"
+                    style={{ color: "var(--danger)" }}
+                  >
+                    <LogOut size={14} />
+                    {t("auth.logout")}
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
         </header>
 
