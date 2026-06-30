@@ -1,0 +1,102 @@
+{
+  "brand": "DIGITORA",
+  "tagline": "Haydovchi monitoring tizimi",
+  "nav": {
+    "fleet": "Fleet",
+    "history": "Tarix",
+    "reports": "Hisobot",
+    "settings": "Sozlamalar"
+  },
+  "auth": {
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "logout": "Chiqish",
+    "username": "Foydalanuvchi nomi",
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "confirm_password": "Parolni tasdiqlang",
+    "company": "Kompaniya nomi",
+    "role_label": "Foydalanuvchi turi",
+    "role_free": "Shaxsiy foydalanuvchi",
+    "role_free_desc": "Faqat o'z qurilmangizni kuzating",
+    "role_business": "Biznes / Logistika kompaniyasi",
+    "role_business_desc": "To'liq fleet boshqaruvi — $29/oy",
+    "login_btn": "Tizimga kirish",
+    "register_btn": "Ro'yxatdan o'tish",
+    "no_account": "Hisobingiz yo'qmi?",
+    "have_account": "Hisobingiz bormi?"
+  },
+  "dashboard": {
+    "title": "Dispetcher paneli",
+    "live_map": "Jonli xarita",
+    "drivers": "Haydovchilar",
+    "active_alerts": "Faol ogohlantirishlar",
+    "fleet_overview": "Fleet holati",
+    "no_alerts": "Faol ogohlantirish yo'q",
+    "all_safe": "Barcha haydovchilar xavfsiz"
+  },
+  "device": {
+    "id": "Qurilma ID",
+    "driver": "Haydovchi",
+    "plate": "Davlat raqami",
+    "speed": "Tezlik",
+    "perclos": "PERCLOS",
+    "status": "Holat",
+    "last_seen": "So'nggi aloqa",
+    "location": "Joylashuv"
+  },
+  "alarm": {
+    "level0": "Xavfsiz",
+    "level1": "Ehtiyot",
+    "level2": "Ogohlantirish",
+    "level3": "XAVF",
+    "confirmed": "Tasdiqlandi",
+    "confirm_btn": "Ko'rdim / Tasdiqlash",
+    "new_alert": "Yangi ogohlantirish!"
+  },
+  "theme": {
+    "dark": "Tungi rejim",
+    "light": "Kunduzgi rejim"
+  },
+  "lang": {
+    "uz": "O'zbekcha",
+    "en": "English",
+    "ko": "한국어"
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinish",
+    "search": "Qidirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "close": "Yopish",
+    "back": "Orqaga",
+    "details": "Batafsil",
+    "refresh": "Yangilash",
+    "no_data": "Ma'lumot yo'q",
+    "km_h": "km/soat",
+    "celsius": "°C"
+  },
+  "ws": {
+    "connected": "Ulangan",
+    "disconnected": "Uzilgan",
+    "reconnecting": "Qayta ulanmoqda..."
+  },
+  "driver": {
+    "detail_title": "Haydovchi tarixi",
+    "perclos_chart": "PERCLOS grafigi",
+    "alarm_history": "Ogohlantirishlar",
+    "no_history": "Tarix mavjud emas",
+    "recent_events": "So'nggi voqealar",
+    "cabin_temp": "Salon harorati",
+    "cabin_humidity": "Namlik"
+  },
+  "alert_modal": {
+    "title": "⚠ XAVF OGOHLANTIRISHI",
+    "subtitle": "Zudlik bilan choralar ko'ring!",
+    "confirm_btn": "Ko'rdim — Tasdiqlash",
+    "location": "GPS joylashuv",
+    "time": "Vaqt"
+  }
+}

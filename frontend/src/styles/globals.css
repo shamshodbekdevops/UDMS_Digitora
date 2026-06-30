@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   DARK — "Galaktika" (DEFAULT)
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:           #05060F;
+  --surface:      rgba(20, 22, 38, 0.65);
+  --surface-el:   rgba(28, 30, 50, 0.78);
+  --border:       rgba(138, 148, 255, 0.15);
+  --border-glow:  rgba(138, 148, 255, 0.4);
+  --accent:       #E8762C;
+  --accent-rgb:   232, 118, 44;
+  --accent-warm:  #E8762C;
+  --accent-warm-rgb: 232, 118, 44;
+  --text-primary: #EDEFFC;
+  --text-muted:   #8A8FB5;
+  --safe:         #3DDC84;
+  --caution:      #F2C94C;
+  --warning:      #FF8A3D;
+  --danger:       #FF4757;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT — "Atmosfera"
+   ═══════════════════════════════════════════════════════════ */
+html.light {
+  --bg:           #EAF4FF;
+  --surface:      rgba(255, 255, 255, 0.85);
+  --surface-el:   #FFFFFF;
+  --border:       #D6E7F7;
+  --border-glow:  #A9CCEF;
+  --accent:       #2B6FE0;
+  --accent-rgb:   43, 111, 224;
+  --accent-warm:  #D85F1C;
+  --accent-warm-rgb: 216, 95, 28;
+  --text-primary: #14202E;
+  --text-muted:   #5A7088;
+  --safe:         #1FAE6E;
+  --caution:      #D9A300;
+  --warning:      #E06A1F;
+  --danger:       #E0383F;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL TRANSITIONS (8-ban: tema almashtirish silliqligi)
+   ═══════════════════════════════════════════════════════════ */
+html {
+  color-scheme: dark;
+  transition: background-color 400ms ease;
+}
+html.light {
+  color-scheme: light;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body, "Inter", sans-serif);
+  font-size: 15.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+#root {
+  min-height: 100vh;
+}
+body, .theme-transition {
+  transition:
+    background-color 400ms ease,
+    border-color 400ms ease,
+    color 400ms ease;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.22);
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COSMIC BG — CSS-only layers
+   ═══════════════════════════════════════════════════════════ */
+.cosmic-dark { opacity: 1; transition: opacity 500ms ease; }
+html.light .cosmic-dark { opacity: 0; pointer-events: none; }
+
+.cosmic-light { opacity: 0; transition: opacity 500ms ease; }
+html.light .cosmic-light { opacity: 1; }
+
+@keyframes nebula-drift-1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(20px, -15px) scale(1.04); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes nebula-drift-2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-15px, 20px) scale(1.03); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes twinkle-slow {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+@keyframes twinkle-fast {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 0.1; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLASSMORPHISM helper class
+   ═══════════════════════════════════════════════════════════ */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.glass:hover {
+  border-color: var(--border-glow);
+}
+html.light .glass {
+  box-shadow: 0 4px 24px rgba(43, 111, 224, 0.08);
+}
+
+.page-shell {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.page-surface {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 28%);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RISK PULSE (signature element)
+   ═══════════════════════════════════════════════════════════ */
+@keyframes risk-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.14); }
+}
+@keyframes risk-ring {
+  0%   { transform: scale(0.8); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes risk-ring-delay {
+  0%   { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RADAR PING (xarita markerlari uchun)
+   ═══════════════════════════════════════════════════════════ */
+@keyframes radar-ping {
+  0%   { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(3);   opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SHIMMER SKELETON
+   ═══════════════════════════════════════════════════════════ */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--surface-el) 50%,
+    var(--surface) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MICRO-INTERACTIONS (10-ban)
+   ═══════════════════════════════════════════════════════════ */
+.btn-press {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.btn-press:active { transform: scale(0.97); }
+
+.card-lift {
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LEAFLET overrides (dark glassmorphism)
+   ═══════════════════════════════════════════════════════════ */
+.leaflet-container {
+  background: transparent !important;
+  font-family: var(--font-body, sans-serif);
+}
+.leaflet-popup-content-wrapper {
+  background: rgba(20, 22, 38, 0.92) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(138, 148, 255, 0.2) !important;
+  border-radius: 12px !important;
+  color: #EDEFFC !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+html.light .leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: #D6E7F7 !important;
+  color: #14202E !important;
+}
+.leaflet-popup-tip {
+  background: rgba(20, 22, 38, 0.92) !important;
+}
+html.light .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+.leaflet-popup-close-button { color: #8A8FB5 !important; }
+
+/* Radar marker */
+.radar-marker { position: relative; display: flex; align-items: center; justify-content: center; }
+.radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: radar-ping 1.8s ease-out infinite;
+}
+.radar-ring-2 {
+  animation-delay: 0.7s;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOGIN PAGE — shooting stars, crescent moon
+   ═══════════════════════════════════════════════════════════ */
+/* Shooting star: thin diagonal streak */
+.shooting-star {
+  position: absolute;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.88) 55%, transparent 100%);
+  transform-origin: left center;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 2px;
+}
+@keyframes shoot {
+  0%   { opacity: 0;   transform: rotate(-38deg) translateX(0); }
+  4%   { opacity: 0.95; }
+  16%  { opacity: 0;   transform: rotate(-38deg) translateX(-520px); }
+  100% { opacity: 0;   transform: rotate(-38deg) translateX(-520px); }
+}
+
+/* Moon gentle float */
+@keyframes moon-float {
+  0%, 100% { transform: translateY(0)    rotate(-5deg); }
+  50%       { transform: translateY(-14px) rotate(-5deg); }
+}
+
+/* Hero section: stat chip entrance */
+@keyframes chip-appear {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Login form card entrance */
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Light mode hero: pulsing blue glow */
+@keyframes hero-glow {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DASHBOARD — KPI row gradient text
+   ═══════════════════════════════════════════════════════════ */
+@keyframes health-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+@keyframes danger-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-glow); }

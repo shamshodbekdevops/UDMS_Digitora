@@ -1,0 +1,102 @@
+{
+  "brand": "DIGITORA",
+  "tagline": "Driver Monitoring System",
+  "nav": {
+    "fleet": "Fleet",
+    "history": "History",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "company": "Company Name",
+    "role_label": "Account Type",
+    "role_free": "Individual User",
+    "role_free_desc": "Monitor your own device only",
+    "role_business": "Business / Logistics Company",
+    "role_business_desc": "Full fleet management — $29/mo",
+    "login_btn": "Sign In",
+    "register_btn": "Create Account",
+    "no_account": "Don't have an account?",
+    "have_account": "Already have an account?"
+  },
+  "dashboard": {
+    "title": "Dispatcher Dashboard",
+    "live_map": "Live Map",
+    "drivers": "Drivers",
+    "active_alerts": "Active Alerts",
+    "fleet_overview": "Fleet Overview",
+    "no_alerts": "No active alerts",
+    "all_safe": "All drivers are safe"
+  },
+  "device": {
+    "id": "Device ID",
+    "driver": "Driver",
+    "plate": "Plate Number",
+    "speed": "Speed",
+    "perclos": "PERCLOS",
+    "status": "Status",
+    "last_seen": "Last Seen",
+    "location": "Location"
+  },
+  "alarm": {
+    "level0": "Safe",
+    "level1": "Caution",
+    "level2": "Warning",
+    "level3": "DANGER",
+    "confirmed": "Confirmed",
+    "confirm_btn": "Acknowledge",
+    "new_alert": "New Alert!"
+  },
+  "theme": {
+    "dark": "Dark Mode",
+    "light": "Light Mode"
+  },
+  "lang": {
+    "uz": "O'zbekcha",
+    "en": "English",
+    "ko": "한국어"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "details": "Details",
+    "refresh": "Refresh",
+    "no_data": "No data available",
+    "km_h": "km/h",
+    "celsius": "°C"
+  },
+  "ws": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "reconnecting": "Reconnecting..."
+  },
+  "driver": {
+    "detail_title": "Driver History",
+    "perclos_chart": "PERCLOS Chart",
+    "alarm_history": "Alarm Events",
+    "no_history": "No history available",
+    "recent_events": "Recent Events",
+    "cabin_temp": "Cabin Temp",
+    "cabin_humidity": "Humidity"
+  },
+  "alert_modal": {
+    "title": "⚠ DANGER ALERT",
+    "subtitle": "Immediate action required!",
+    "confirm_btn": "Acknowledged",
+    "location": "GPS Location",
+    "time": "Time"
+  }
+}
