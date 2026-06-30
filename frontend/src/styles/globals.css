@@ -193,6 +193,20 @@ html.light .glass {
 }
 .btn-press:active { transform: scale(0.97); }
 
+.input-base {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--border);
+  background: var(--surface-el);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.input-base:focus { border-color: var(--accent); }
+.input-base::placeholder { color: var(--text-muted); }
+
 .card-lift {
   transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }

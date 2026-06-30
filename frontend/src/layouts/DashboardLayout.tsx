@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   LayoutDashboard, History, BarChart3, Settings,
-  Bell, LogOut, ChevronDown,
+  Bell, LogOut, ChevronDown, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "nav.fleet" },
   { to: "/history",   icon: History,         labelKey: "nav.history" },
   { to: "/reports",   icon: BarChart3,        labelKey: "nav.reports" },
+  { to: "/drivers",   icon: Users,            labelKey: "nav.drivers" },
 ];
 
 export default function DashboardLayout() {

@@ -42,6 +42,32 @@ class AlertEvent(models.Model):
         return f"[L{self.alarm_level}] {self.device.device_id} @ {self.timestamp}"
 
 
+class Driver(models.Model):
+    full_name = models.CharField(max_length=255)
+    vehicle_plate = models.CharField(max_length=50)
+    device = models.OneToOneField(
+        "Device",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="driver",
+    )
+    phone = models.CharField(max_length=50, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="drivers",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["full_name"]
+
+    def __str__(self):
+        return self.full_name
+
+
 class LiveStatus(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="live")
     alarm_level = models.IntegerField(default=0)

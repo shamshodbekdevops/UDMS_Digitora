@@ -27,9 +27,21 @@ export interface Device {
   live: LiveStatus | null;
 }
 
+export interface Driver {
+  id: number;
+  full_name: string;
+  vehicle_plate: string;
+  device: number | null;
+  device_id: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface AlertEvent {
   id: number;
   device_id: string;
+  driver_name: string;
   alarm_level: AlarmLevel;
   alarm_msg: string;
   perclos: number;

@@ -4,6 +4,9 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import DriverDetail from "@/pages/DriverDetail";
+import History from "@/pages/History";
+import Reports from "@/pages/Reports";
+import Drivers from "@/pages/Drivers";
 import DashboardLayout from "@/layouts/DashboardLayout";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -32,6 +35,10 @@ export const router = createBrowserRouter([
     children: [
       { path: "dashboard", element: <Dashboard /> },
       { path: "driver/:deviceId", element: <DriverDetail /> },
+      { path: "history", element: <History /> },
+      { path: "reports", element: <Reports /> },
+      { path: "drivers", element: <Drivers /> },
+      { path: "drivers/:deviceId", element: <DriverDetail /> },
     ],
   },
 ]);

@@ -5,7 +5,8 @@
     "fleet": "차량단",
     "history": "기록",
     "reports": "보고서",
-    "settings": "설정"
+    "settings": "설정",
+    "drivers": "운전자"
   },
   "auth": {
     "login": "로그인",

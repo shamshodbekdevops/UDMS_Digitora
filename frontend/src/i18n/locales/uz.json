@@ -5,7 +5,8 @@
     "fleet": "Fleet",
     "history": "Tarix",
     "reports": "Hisobot",
-    "settings": "Sozlamalar"
+    "settings": "Sozlamalar",
+    "drivers": "Haydovchilar"
   },
   "auth": {
     "login": "Kirish",

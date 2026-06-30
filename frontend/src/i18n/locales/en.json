@@ -5,7 +5,8 @@
     "fleet": "Fleet",
     "history": "History",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "drivers": "Drivers"
   },
   "auth": {
     "login": "Login",
