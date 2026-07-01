@@ -141,3 +141,45 @@ cd frontend
 Remove-Item -Recurse -Force node_modules
 npm install
 ```
+
+
+
+
+
+
+
+1. Noutbukda — GitHub'ga yuklash
+git add .
+git commit -m "o'zgarish tavsifi"
+git push origin main
+
+2. Serverda — yangilash
+ssh root@45.130.164.189 - Apple18782005MM
+cd /root/UDMS_Digitora
+git pull origin main
+docker compose up -d --build
+
+3. Jetson'da — agar jetson.py o'zgargаn bo'lsa
+curl -o ~/Desktop/DMS/sinov1/jetson.py https://raw.githubusercontent.com/shamshodbekdevops/UDMS_Digitora/main/jetson.py
+sudo systemctl restart digitora-dms
+
+Eng qulay — bitta deploy.bat skript (noutbukda)
+D:\30_Projects\UDMS_Digitora\deploy.bat faylini yarating:
+bat
+@echo off
+echo [1/3] GitHub ga yuklanyapti...
+git add .
+git commit -m "update"
+git push origin main
+
+echo [2/3] Serverga yuklanyapti...
+ssh root@45.130.164.189 "cd /root/UDMS_Digitora && git pull origin main && docker compose up -d --build"
+
+echo [3/3] Jetson ga yuklanyapti...
+ssh jetson@172.16.7.206 "curl -s -o ~/Desktop/DMS/sinov1/jetson.py https://raw.githubusercontent.com/shamshodbekdevops/UDMS_Digitora/main/jetson.py && sudo systemctl restart digitora-dms"
+
+echo Hammasi tayyor!
+pause
+
+
+Keyingi safar — faqat deploy.bat ni ikki marta bosasiz, hammasi avtomatik.
