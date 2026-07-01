@@ -156,7 +156,7 @@ export function AlertModal({ packet, onDismiss }: Props) {
   useEffect(() => {
     if (!packet) {
       // Reset tab title when modal closes
-      document.title = "DIGITORA DMS";
+      document.title = "UDMS";
       return;
     }
 
@@ -164,9 +164,9 @@ export function AlertModal({ packet, onDismiss }: Props) {
     if (soundAlerts) playAlertBeep();
 
     // Tab title
-    document.title = "⚠️ ALERT — DIGITORA DMS";
+    document.title = "⚠️ ALERT — UDMS";
     const titleTimer = setTimeout(() => {
-      if (document.title.includes("ALERT")) document.title = "DIGITORA DMS";
+      if (document.title.includes("ALERT")) document.title = "UDMS";
     }, 5000);
 
     // ESC key
@@ -176,7 +176,7 @@ export function AlertModal({ packet, onDismiss }: Props) {
     return () => {
       window.removeEventListener("keydown", onKey);
       clearTimeout(titleTimer);
-      document.title = "DIGITORA DMS";
+      document.title = "UDMS";
     };
   }, [packet, onDismiss, soundAlerts]);
 

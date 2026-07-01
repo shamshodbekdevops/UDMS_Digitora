@@ -204,6 +204,8 @@ export function NotificationCenter() {
                   background: "rgba(var(--accent-rgb),0.1)",
                   border: "1px solid rgba(var(--accent-rgb),0.22)",
                   color: "var(--accent)",
+                  whiteSpace: "nowrap",
+                  minWidth: "max-content",
                 }}
               >
                 <CheckCheck size={13} />

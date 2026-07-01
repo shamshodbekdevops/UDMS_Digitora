@@ -88,21 +88,21 @@ export default function DashboardLayout() {
         {/* Logo + LIVE badge */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border/50">
           <div
-            className="h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center"
+            className="h-10 w-10 shrink-0 rounded-2xl overflow-hidden"
             style={{
               background: "linear-gradient(135deg, #D85F1C, #E8762C)",
               boxShadow: "0 8px 24px rgba(232,118,44,0.3)",
             }}
           >
-            <span className="text-white font-display font-bold text-sm">DG</span>
+            <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div className="min-w-0">
             <p className="font-display font-bold text-text-primary text-[15px] leading-none tracking-[0.18em]">
-              DIGITORA
+              UDMS
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <p className="text-[11px] text-text-muted leading-none tracking-widest uppercase">
-                DMS
+              <p className="text-[11px] text-text-muted leading-none" style={{ letterSpacing: "0.04em" }}>
+                created by Digitora
               </p>
               {/* Live badge */}
               <span

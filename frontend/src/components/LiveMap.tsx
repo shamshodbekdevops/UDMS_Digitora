@@ -4,6 +4,7 @@ import L from "leaflet";
 import type { Device } from "@/types";
 import { ALARM_COLOR } from "@/lib/utils";
 import type { AlarmLevel } from "@/types";
+import { useThemeStore } from "@/store/theme";
 
 // Radar ping DivIcon — xuddi radar ekranidagi kabi (4-effekt)
 function createRadarIcon(level: AlarmLevel, color: string) {
@@ -74,10 +75,15 @@ interface Props {
 }
 
 export function LiveMap({ devices }: Props) {
+  const { isDark } = useThemeStore();
   const positioned = useMemo(
     () => devices.filter((d) => d.live?.gps_lat != null && d.live?.gps_lon != null),
     [devices]
   );
+
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <MapContainer
@@ -87,9 +93,9 @@ export function LiveMap({ devices }: Props) {
       zoomControl={false}
       attributionControl={false}
     >
-      {/* CartoDB Dark tiles — API key shart emas */}
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        key={tileUrl}
+        url={tileUrl}
         attribution="&copy; OpenStreetMap &copy; CARTO"
       />
       <MapFit devices={devices} />

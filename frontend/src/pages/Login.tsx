@@ -40,37 +40,6 @@ function ShootingStars() {
 }
 
 /* ──────────────────────────────────────────
-   Crescent Moon SVG (dark mode)
-────────────────────────────────────────── */
-function CrescentMoon() {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: "9%",
-        right: "10%",
-        animation: "moon-float 9s ease-in-out infinite",
-        filter: "drop-shadow(0 0 22px rgba(245,232,200,0.55)) drop-shadow(0 0 60px rgba(245,232,200,0.2))",
-      }}
-    >
-      <svg viewBox="0 0 100 100" width={90} height={90}>
-        <defs>
-          <mask id="crescent-m">
-            <rect width="100" height="100" fill="white" />
-            <circle cx="63" cy="36" r="33" fill="black" />
-          </mask>
-        </defs>
-        <circle cx="44" cy="50" r="33" fill="#F5E8C6" mask="url(#crescent-m)" />
-        {/* subtle craters */}
-        <circle cx="30" cy="56" r="3.5" fill="rgba(0,0,0,0.07)" mask="url(#crescent-m)" />
-        <circle cx="22" cy="40" r="2.2" fill="rgba(0,0,0,0.05)" mask="url(#crescent-m)" />
-        <circle cx="38" cy="66" r="1.8" fill="rgba(0,0,0,0.04)" mask="url(#crescent-m)" />
-      </svg>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────
    Hero stat chip
 ────────────────────────────────────────── */
 function HeroStat({
@@ -222,10 +191,9 @@ export default function Login() {
           style={{ background: "linear-gradient(145deg, #06245C 0%, #0B3DAD 40%, #1254C5 70%, #1869D4 100%)" }}
         />
 
-        {/* Dark mode decorations: moon + shooting stars */}
+        {/* Dark mode decorations: shooting stars + nebula */}
         <div className="cosmic-dark absolute inset-0 overflow-hidden pointer-events-none">
           <ShootingStars />
-          <CrescentMoon />
           {/* Nebula accent */}
           <div style={{
             position: "absolute", bottom: "12%", left: "5%",
@@ -244,17 +212,17 @@ export default function Login() {
           {/* Logo + brand */}
           <div className="flex items-center gap-3 mb-10">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden"
               style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1))", border: "1px solid rgba(255,255,255,0.28)" }}
             >
-              <span className="font-display font-black text-white text-2xl tracking-tighter">DG</span>
+              <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
               <p className="font-display font-black text-white text-[22px] tracking-[0.16em] leading-none">
-                DIGITORA
+                UDMS
               </p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3 }}>
-                {t("auth.hero_brand_subtitle")}
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", letterSpacing: "0.06em", marginTop: 3 }}>
+                created by Digitora
               </p>
             </div>
           </div>
@@ -292,11 +260,14 @@ export default function Login() {
 
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2.5 mb-8">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          <div className="w-10 h-10 rounded-xl overflow-hidden"
             style={{ background: "linear-gradient(135deg, var(--accent-warm), var(--accent))" }}>
-            <span className="font-display font-black text-white text-sm">DG</span>
+            <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
-          <span className="font-display font-black text-text-primary text-xl tracking-widest">DIGITORA</span>
+          <div>
+            <span className="font-display font-black text-text-primary text-xl tracking-widest">UDMS</span>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>created by Digitora</p>
+          </div>
         </div>
 
         {/* Form card */}
