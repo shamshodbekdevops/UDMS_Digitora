@@ -19,8 +19,6 @@
 ╚══════════════════════════════════════════════════════════════════╝
 """
 
-import asyncio
-import json
 import cv2
 import numpy as np
 import time
@@ -31,6 +29,8 @@ import sys
 import subprocess
 import urllib.request
 import glob as _glob
+import json
+import asyncio
 from collections import deque
 from datetime import datetime, timezone
 
@@ -41,15 +41,63 @@ from mediapipe.tasks.python import vision as mp_vision
 from mediapipe.tasks.python.vision.core.vision_task_running_mode import VisionTaskRunningMode
 
 # ── Haydovchi identifikatori ──────────────────────────────────────
-# Hozircha qo'lda kiritiladi. Keyingi bosqichda Jetson Serial Number
-# orqali avtomatik o'qiladi (server bilan integratsiya qilinganda).
 DRIVER_ID = "SHAMSHOD"
 
-# ── Server ulanish sozlamalari ────────────────────────────────────
-DEVICE_ID          = "DGT-001"          # Backendda ro'yxatdan o'tgan device_id
-WS_HOST            = "45.130.164.189"   # Django backend host (VPS)
-WS_PORT            = 8000               # Django backend WebSocket porti
-WS_PACKET_INTERVAL = 3.0               # Server ga paket yuborish oralig'i (soniya)
+# ══════════════════════════════════════════════════════════════════
+#  SERVER SOZLAMALARI
+# ══════════════════════════════════════════════════════════════════
+DEVICE_ID        = os.getenv("DIGITORA_DEVICE_ID",   "Qora_pantera")
+WS_HOST          = os.getenv("DIGITORA_WS_HOST",     "45.130.164.189")
+WS_PORT          = int(os.getenv("DIGITORA_WS_PORT", "8000"))
+WS_URL           = f"ws://{WS_HOST}:{WS_PORT}/ws/dms/"
+WS_SEND_INTERVAL = 2.0   # har necha soniyada serverga yuborish
+
+# ══════════════════════════════════════════════════════════════════
+#  WEBSOCKET YUBORGICH — alohida thread, asosiy loopni bloklam aydi
+# ══════════════════════════════════════════════════════════════════
+try:
+    import websockets as _ws_lib
+    _WS_OK = True
+except ImportError:
+    _ws_lib = None
+    _WS_OK  = False
+    print("  [!] websockets yo'q: pip3 install websockets")
+
+class WsSender:
+    def __init__(self):
+        self.connected = False
+        if not _WS_OK:
+            return
+        self._loop  = asyncio.new_event_loop()
+        self._queue = asyncio.Queue()
+        threading.Thread(
+            target=self._run, daemon=True, name="ws-sender"
+        ).start()
+
+    def _run(self):
+        asyncio.set_event_loop(self._loop)
+        self._loop.run_until_complete(self._loop_forever())
+
+    async def _loop_forever(self):
+        while True:
+            try:
+                async with _ws_lib.connect(
+                    WS_URL, ping_interval=20, ping_timeout=10
+                ) as ws:
+                    self.connected = True
+                    print(f"  [WS] Ulandi → {WS_URL}")
+                    while True:
+                        pkt = await self._queue.get()
+                        await ws.send(json.dumps(pkt))
+            except Exception as e:
+                self.connected = False
+                print(f"  [WS] Uzildi ({type(e).__name__}), 5s kutilmoqda...")
+                await asyncio.sleep(5)
+
+    def send(self, packet: dict):
+        if not _WS_OK:
+            return
+        self._loop.call_soon_threadsafe(self._queue.put_nowait, packet)
 
 # ══════════════════════════════════════════════════════════════════
 #  MODEL FAYL
@@ -255,46 +303,6 @@ def calc_head_pose(lm, W, H):
     if pitch >  90: pitch -= 180
     if pitch < -90: pitch += 180
     return pitch, yaw, roll
-
-# ══════════════════════════════════════════════════════════════════
-#  WEBSOCKET YUBORGICH (alohida daemon thread)
-# ══════════════════════════════════════════════════════════════════
-try:
-    import websockets as _websockets
-    _WS_AVAILABLE = True
-except ImportError:
-    _websockets = None
-    _WS_AVAILABLE = False
-    print("  [!] websockets topilmadi: pip3 install websockets")
-
-
-class _WsSender:
-    """Asosiy loopni to'smasdan WebSocket orqali paket yuboradi."""
-    def __init__(self):
-        self._loop  = asyncio.new_event_loop()
-        self._queue: asyncio.Queue = asyncio.Queue()
-        threading.Thread(target=self._run, daemon=True, name="ws-sender").start()
-
-    def _run(self):
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_until_complete(self._loop_forever())
-
-    async def _loop_forever(self):
-        url = f"ws://{WS_HOST}:{WS_PORT}/ws/dms/"
-        while True:
-            try:
-                async with _websockets.connect(url) as ws:
-                    print(f"  [WS] Ulandi → {url}")
-                    while True:
-                        pkt = await self._queue.get()
-                        await ws.send(json.dumps(pkt))
-            except Exception as ex:
-                print(f"  [WS] Uzildi ({ex}), 5s keyin qayta urinadi…")
-                await asyncio.sleep(5)
-
-    def send(self, packet: dict) -> None:
-        self._loop.call_soon_threadsafe(self._queue.put_nowait, packet)
-
 
 # ══════════════════════════════════════════════════════════════════
 #  ARDUINO
@@ -1035,8 +1043,8 @@ def main():
 
     ard    = Arduino()
     st     = State()
-    ws_sender    = _WsSender() if _WS_AVAILABLE else None
-    last_ws_send = 0.0
+    ws     = WsSender()        # ← SERVER ULANISH
+    last_ws_send = 0.0         # ← oxirgi yuborish vaqti
     canvas = np.zeros((CANVAS_H,CANVAS_W,3),dtype=np.uint8)
     cv2.namedWindow("Digitora DMS", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Digitora DMS", CANVAS_W, CANVAS_H)
@@ -1122,24 +1130,6 @@ def main():
 
         ard.set_level(st.alarm_level)
 
-        # ── WS paketi (har WS_PACKET_INTERVAL sekunda) ─────────────
-        _now = time.time()
-        if ws_sender and _now - last_ws_send >= WS_PACKET_INTERVAL:
-            last_ws_send = _now
-            ws_sender.send({
-                "device_id":   DEVICE_ID,
-                "driver_name": DRIVER_ID,
-                "timestamp":   datetime.now(timezone.utc).isoformat(),
-                "alarm_level": st.alarm_level,
-                "alarm_msg":   st.alarm_msg,
-                "perclos":     round(d["perclos"], 4),
-                "gps":   {"lat":   st.gps_lat   or 0.0,
-                          "lon":   st.gps_lon   or 0.0,
-                          "speed": st.gps_speed or 0.0},
-                "cabin": {"temp":     st.cabin_temp or 0.0,
-                          "humidity": st.cabin_hum  or 0.0},
-            })
-
         if ard.pop_snooze():
             st.add_event(0,"Tugma 1: Snooze — uyg'oqman")
             half=len(st.perclos_buf)//2
@@ -1173,6 +1163,34 @@ def main():
         st.pcl_hist.append(d["perclos"])
         st.yaw_hist.append(d["yaw"])
         st.spd_hist.append(st.gps_speed or 0)
+
+        # ── SERVERGA PAKET YUBORISH ───────────────────────────────
+        now_t = time.time()
+        if now_t - last_ws_send >= WS_SEND_INTERVAL:
+            last_ws_send = now_t
+            packet = {
+                "device_id":   DEVICE_ID,
+                "driver_name": DRIVER_ID,
+                "timestamp":   datetime.now(timezone.utc).isoformat(),
+                "alarm_level": st.alarm_level,
+                "alarm_msg":   st.alarm_msg,
+                "perclos":     round(d["perclos"], 4),
+                "gps": {
+                    "lat":   st.gps_lat   or 0.0,
+                    "lon":   st.gps_lon   or 0.0,
+                    "speed": st.gps_speed or 0.0,
+                },
+                "cabin": {
+                    "temp":     st.cabin_temp or 0.0,
+                    "humidity": st.cabin_hum  or 0.0,
+                },
+            }
+            ws.send(packet)
+            icons  = ["🟢","🟡","🟠","🔴"]
+            ws_st  = "WS✓" if ws.connected else "WS✗"
+            print(f"  {icons[min(st.alarm_level,3)]} L{st.alarm_level} | "
+                  f"PERCLOS={d['perclos']:.3f} | {ws_st} | "
+                  f"{st.alarm_msg[:35]}")
 
         canvas[:]=C["bg"]
         draw_ui(canvas,frame,st,d,ard)
