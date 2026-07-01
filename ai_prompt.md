@@ -1,53 +1,82 @@
-# DIGITORA DMS — Prompt 1: Quick Fixes (4 ta tuzatish)
+# DIGITORA DMS — Prompt 2: Map, Drivers, Translations (4 ta o'zgarish)
 
-Do NOT restructure anything. Make ONLY these exact changes:
-
----
-
-## FIX 1 — Dark/Light mode: Map always shows dark
-
-The Leaflet map always renders with a dark tile layer regardless of
-the current theme. Fix it:
-- LIGHT mode tile: `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
-- DARK mode tile: `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`
-
-Listen to the theme state (Zustand or context) and swap the tile
-layer when theme changes. The map should re-render with the correct
-tiles immediately when theme is toggled.
-
-Also audit ALL other components for dark/light issues — text colors,
-borders, card backgrounds, chart axis colors. Fix anything that does
-not properly respond to theme toggle.
+Do NOT touch anything from Prompt 1. Make ONLY these changes:
 
 ---
 
-## FIX 2 — Notification panel button text clipped
+## CHANGE 1 — Map: Remove legend, add better info panel
 
-"Hammasini o'qilgan deb belgilash" button text is cut off in the corner.
-Fix:
-- Add `white-space: nowrap` to the button
-- Give it proper padding and min-width
-- Fix the panel header flex layout so button has enough space
+Remove the current "LEGENDA" box (bottom-left of map) completely.
 
----
-
-## FIX 3 — Remove moon icon from theme toggle
-
-Remove the moon emoji or SVG from the dark mode toggle button in the
-header. Replace with a clean star/galaxy SVG icon. No moon anywhere.
+Replace with a clean floating info bar at the TOP of the map:
+```
+[ ● 4 Faol qurilma ]  [ ⚡ 2 Ogohlantirish ]  [ 🔴 1 Xavf ]
+```
+Style: glassmorphism card, small, horizontal, top-center of map.
+Numbers update in real-time from WebSocket data.
+Each stat is colored: green for active, orange for warning, red for danger.
 
 ---
 
-## FIX 4 — Rebrand: "Digitora DMS" → "UDMS"
+## CHANGE 2 — Driver Online/Offline status fix
 
-Search ALL files for "Digitora DMS", "DIGITORA DMS", logo/icon usage.
-Replace everywhere:
-- Main text: `UDMS` (large bold)
-- Subtitle: `created by Digitora` (11px, var(--text-muted), below or beside)
-- Logo image: `<img src="/rasm.png" alt="UDMS" />` (user will place the file)
+Currently drivers show "Ulangan" (connected) even when no data is
+coming from the device. Fix this:
 
-Apply on: Login page, Dashboard sidebar, everywhere the brand appears.
+A driver/device is ONLINE only if:
+- `LiveStatus.last_seen` is within the last 30 seconds
+
+A driver/device is OFFLINE if:
+- No data received for more than 30 seconds
+- Or device has never sent data
+
+In the driver card and driver list:
+- Show green "● Online" badge when online
+- Show gray "○ Offline" badge when offline
+- Remove the current "Ulangan" static status
+
+Update both the backend API response and the frontend display.
 
 ---
 
-Complete all 4 fixes, show result, then STOP.
+## CHANGE 3 — DGT-002 static GPS location
+
+For the device with `device_id = "DGT-002"`, set a static GPS
+location (used when real GPS data is 0,0 or missing):
+
+```
+Latitude:  41.309847
+Longitude: 69.2686852
+```
+(Lotte City Hotel Tashkent Palace location)
+
+In the frontend map component: if `gps.lat === 0 && gps.lon === 0`,
+use these fallback coordinates for DGT-002 specifically.
+Show the marker at this location on the map.
+
+---
+
+## CHANGE 4 — Full i18n for ALL pages
+
+Currently some pages are not translated. Make ALL text translatable:
+
+1. Go through EVERY page and component
+2. Find any hardcoded Uzbek, English, or Korean text strings
+3. Replace ALL of them with i18n translation keys using react-i18next
+   `const { t } = useTranslation()` and `{t('key')}`
+4. Add the translation keys to all 3 locale files: `uz.json`, `en.json`, `ko.json`
+
+Pages that need special attention:
+- Drivers page (all table headers, buttons, status labels)
+- History page (filter labels, column headers, empty states)
+- Reports page (chart titles, stat card labels)
+- Settings page (all tab labels, form labels)
+- Alert modal (all text inside)
+- Driver detail page (all labels)
+
+After adding keys, test by switching language in the header — ALL
+text on ALL pages must change language immediately.
+
+---
+
+Complete all 4 changes, show result, then STOP.
