@@ -16,10 +16,6 @@ import { useFleetStore } from "@/store/fleet";
 import { ALARM_COLOR, formatRelativeTime } from "@/lib/utils";
 import type { AlertEvent, AlarmLevel } from "@/types";
 
-// WebRTC stream URL from .env — change per device in production
-const STREAM_URL = import.meta.env.VITE_STREAM_BASE_URL
-  ? `${import.meta.env.VITE_STREAM_BASE_URL}/offer`
-  : null;
 const BADGE_VARIANT = ["safe", "caution", "warning", "danger"] as const;
 
 interface ChartPoint {
@@ -88,25 +84,22 @@ export default function DriverDetail() {
         </div>
       </motion.div>
 
-      {/* Live camera feed — WebRTC (prominent, full-width) */}
-      {STREAM_URL && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.04 }}>
-          <div className="glass rounded-2xl p-3">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
-              <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
-                Jonli kamera oqimi
-              </span>
-            </div>
-            <LiveCameraFeed
-              deviceId={deviceId ?? ""}
-              streamUrl={STREAM_URL}
-              alarmLevel={level as AlarmLevel}
-            />
+      {/* Live camera feed — MJPEG polling */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.04 }}>
+        <div className="glass rounded-2xl p-3">
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
+            <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+              Jonli kamera oqimi
+            </span>
           </div>
-        </motion.div>
-      )}
+          <LiveCameraFeed
+            deviceId={deviceId ?? ""}
+            alarmLevel={level as AlarmLevel}
+          />
+        </div>
+      </motion.div>
 
       {/* Live stats cards */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
