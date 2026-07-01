@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 import { ALARM_COLOR } from "@/lib/utils";
 import type { Device, WsPacket } from "@/types";
 import {
-  CheckCircle2, Activity, AlertTriangle, Layers,
+  CheckCircle2, Activity, AlertTriangle,
   TrendingUp, Cpu, Signal,
 } from "lucide-react";
 
@@ -363,33 +363,26 @@ export default function Dashboard() {
           <div className="flex-1 relative min-w-0">
             <LiveMap devices={devices} />
 
-            <div className="absolute top-3 left-3 z-[1000] pointer-events-none">
+            {/* Top-center info bar */}
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
               <div
-                className="rounded-2xl px-3.5 py-2 flex items-center gap-2.5"
-                style={{ background: "rgba(5,6,15,0.72)", backdropFilter: "blur(12px)", border: "1px solid rgba(138,148,255,0.18)" }}
+                className="rounded-2xl px-4 py-2 flex items-center gap-3"
+                style={{ background: "rgba(5,6,15,0.76)", backdropFilter: "blur(14px)", border: "1px solid rgba(138,148,255,0.18)" }}
               >
-                <div className="w-2 h-2 rounded-full bg-safe animate-pulse" />
-                <span className="text-xs font-bold text-white tracking-wide">{t("dashboard.live_map")}</span>
-                <span className="text-[10px] font-mono text-white/50 ml-1">{devices.length} {t("dashboard.devices_label")}</span>
-              </div>
-            </div>
-
-            <div className="absolute bottom-6 left-3 z-[1000] pointer-events-none">
-              <div
-                className="rounded-2xl p-3 space-y-2"
-                style={{ background: "rgba(5,6,15,0.78)", backdropFilter: "blur(12px)", border: "1px solid rgba(138,148,255,0.18)" }}
-              >
-                <div className="flex items-center gap-1.5 text-[10px] text-white/50 mb-1.5">
-                  <Layers size={10} />
-                  <span className="font-bold uppercase tracking-widest">{t("dashboard.legend")}</span>
-                </div>
-                {([0, 1, 2, 3] as const).map((lvl) => (
-                  <div key={lvl} className="flex items-center gap-2.5 text-[11px]">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ALARM_COLOR[lvl] }} />
-                    <span className="text-white/65">{t(`alarm.level${lvl}`)}</span>
-                    <span className="ml-auto font-mono font-bold text-white tabular-nums">{counts[lvl]}</span>
-                  </div>
-                ))}
+                <span className="flex items-center gap-1.5 text-[12px] font-bold" style={{ color: "#3DDC84" }}>
+                  <span style={{ fontSize: 9 }}>●</span>
+                  {devices.length} {t("dashboard.map_active")}
+                </span>
+                <span className="w-px h-4 shrink-0" style={{ background: "rgba(138,148,255,0.25)" }} />
+                <span className="flex items-center gap-1.5 text-[12px] font-bold" style={{ color: "#FF8A3D" }}>
+                  <span>⚡</span>
+                  {counts[1] + counts[2]} {t("dashboard.map_warning")}
+                </span>
+                <span className="w-px h-4 shrink-0" style={{ background: "rgba(138,148,255,0.25)" }} />
+                <span className="flex items-center gap-1.5 text-[12px] font-bold" style={{ color: "#FF4757" }}>
+                  <span style={{ fontSize: 9 }}>●</span>
+                  {counts[3]} {t("dashboard.map_danger")}
+                </span>
               </div>
             </div>
           </div>

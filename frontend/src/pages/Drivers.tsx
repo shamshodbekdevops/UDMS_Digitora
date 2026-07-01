@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, Edit2, Trash2, Wifi, WifiOff } from "lucide-react";
 import { api } from "@/lib/api";
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import type { Driver, Device } from "@/types";
 
-/* ── Avatar color from name hash ─────────────────────────── */
 const AVATAR_COLORS = ["#6C8EFF", "#3DDC84", "#F2C94C", "#FF8A3D", "#A78BFA", "#38BDF8"];
 function avatarColor(name: string): string {
   let h = 0;
@@ -19,8 +19,13 @@ function avatarColor(name: string): string {
 function initials(name: string): string {
   return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
+function isOnline(lastSeen?: string | null): boolean {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < 30_000;
+}
 
 export default function Drivers() {
+  const { t } = useTranslation();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -68,8 +73,8 @@ export default function Drivers() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display font-bold text-text-primary text-lg">Haydovchilar</h1>
-          <p className="text-[12px] text-text-muted mt-0.5">{drivers.length} ta haydovchi</p>
+          <h1 className="font-display font-bold text-text-primary text-lg">{t("drivers.title")}</h1>
+          <p className="text-[12px] text-text-muted mt-0.5">{t("drivers.count", { count: drivers.length })}</p>
         </div>
         <button
           onClick={openAdd}
@@ -77,7 +82,7 @@ export default function Drivers() {
           style={{ background: "rgba(var(--accent-rgb),0.18)", border: "1px solid rgba(var(--accent-rgb),0.35)", color: "var(--accent)" }}
         >
           <Plus size={14} />
-          Haydovchi qo'shish
+          {t("drivers.add_btn")}
         </button>
       </div>
 
@@ -86,7 +91,7 @@ export default function Drivers() {
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
         <input
           type="text"
-          placeholder="Ism, raqam yoki qurilma bo'yicha qidirish..."
+          placeholder={t("drivers.search_ph")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-surface-el text-text-primary text-[13px] outline-none focus:border-accent transition-colors"
@@ -101,35 +106,35 @@ export default function Drivers() {
       ) : drivers.length === 0 ? (
         <div className="glass rounded-2xl p-16 flex flex-col items-center gap-4 text-center">
           <div style={{ fontSize: 48, opacity: 0.2 }}>👤</div>
-          <p className="font-display font-bold text-text-primary text-lg">Haydovchilar yo'q</p>
-          <p className="text-text-muted text-sm max-w-xs">Hozircha hech qanday haydovchi qo'shilmagan</p>
+          <p className="font-display font-bold text-text-primary text-lg">{t("drivers.empty_title")}</p>
+          <p className="text-text-muted text-sm max-w-xs">{t("drivers.empty_subtitle")}</p>
           <button
             onClick={openAdd}
             className="mt-2 px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all duration-200"
             style={{ background: "rgba(var(--accent-rgb),0.18)", border: "1px solid rgba(var(--accent-rgb),0.35)", color: "var(--accent)" }}
           >
-            Birinchi haydovchini qo'shish
+            {t("drivers.add_first")}
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass rounded-2xl p-12 flex flex-col items-center gap-3 text-center">
           <div style={{ fontSize: 36, opacity: 0.2 }}>🔍</div>
-          <p className="font-semibold text-text-primary">Natija topilmadi</p>
-          <p className="text-text-muted text-sm">"{search}" bo'yicha haydovchi topilmadi</p>
+          <p className="font-semibold text-text-primary">{t("drivers.no_results")}</p>
+          <p className="text-text-muted text-sm">{t("drivers.no_results_for", { query: search })}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((driver) => {
               const fleetDev = fleetDevices.find((d) => d.device_id === (driver.device_id ?? ""));
-              const isOnline = !!fleetDev?.live;
+              const online = isOnline(fleetDev?.live?.last_seen);
               const alarmLevel = fleetDev?.live?.alarm_level ?? 0;
 
               return (
                 <DriverCard
                   key={driver.id}
                   driver={driver}
-                  isOnline={isOnline}
+                  isOnline={online}
                   alarmLevel={alarmLevel}
                   delConfirm={delConfirm === driver.id}
                   onEdit={() => openEdit(driver)}
@@ -143,7 +148,6 @@ export default function Drivers() {
         </div>
       )}
 
-      {/* Add/Edit Dialog */}
       <DriverDialog
         open={editing !== null}
         driver={editing === "new" ? null : editing}
@@ -166,6 +170,7 @@ function DriverCard({ driver, isOnline, alarmLevel, delConfirm, onEdit, onDelete
   onDeleteCancel: () => void;
   onDeleteConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const color = avatarColor(driver.full_name);
   const ALARM_COLORS = ["#3DDC84", "#F2C94C", "#FF8A3D", "#FF4757"];
@@ -200,7 +205,6 @@ function DriverCard({ driver, isOnline, alarmLevel, delConfirm, onEdit, onDelete
           <p className="text-[12px] text-text-muted font-mono">{driver.vehicle_plate}</p>
         </div>
 
-        {/* Edit/delete buttons */}
         <div
           className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0"
           onClick={(e) => e.stopPropagation()}
@@ -224,8 +228,8 @@ function DriverCard({ driver, isOnline, alarmLevel, delConfirm, onEdit, onDelete
       <div className="mt-3 flex items-center gap-3 text-[12px]">
         <span className="flex items-center gap-1.5">
           {isOnline
-            ? <><Wifi size={11} className="text-safe" /><span className="text-safe font-semibold">Online</span></>
-            : <><WifiOff size={11} className="text-text-muted" /><span className="text-text-muted">Offline</span></>
+            ? <><Wifi size={11} className="text-safe" /><span className="text-safe font-semibold">{t("driver.online")}</span></>
+            : <><WifiOff size={11} className="text-text-muted" /><span className="text-text-muted">{t("driver.offline")}</span></>
           }
         </span>
         {driver.device_id && (
@@ -255,21 +259,21 @@ function DriverCard({ driver, isOnline, alarmLevel, delConfirm, onEdit, onDelete
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-[13px] font-semibold text-white text-center">
-              <span className="text-danger">O'chirish:</span> {driver.full_name}?
+              <span className="text-danger">{t("drivers.delete_title")}</span> {driver.full_name}?
             </p>
-            <p className="text-[11px] text-white/50 text-center">Bu amalni qaytarib bo'lmaydi</p>
+            <p className="text-[11px] text-white/50 text-center">{t("drivers.delete_warning")}</p>
             <div className="flex gap-2">
               <button
                 onClick={onDeleteCancel}
                 className="px-3 py-1.5 rounded-lg text-[12px] border border-border text-text-muted hover:bg-surface-el transition-all"
               >
-                Bekor
+                {t("common.cancel_short")}
               </button>
               <button
                 onClick={onDeleteConfirm}
                 className="px-3 py-1.5 rounded-lg text-[12px] font-bold bg-danger/20 border border-danger/40 text-danger hover:bg-danger/30 transition-all"
               >
-                O'chirish
+                {t("common.delete")}
               </button>
             </div>
           </motion.div>
@@ -287,6 +291,7 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ full_name: "", vehicle_plate: "", device: "", phone: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -310,7 +315,7 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSave = async () => {
-    if (!form.full_name.trim()) { setError("Ism majburiy"); return; }
+    if (!form.full_name.trim()) { setError(t("drivers.error_name")); return; }
     setSaving(true); setError(null);
     const body: Record<string, unknown> = {
       full_name: form.full_name.trim(),
@@ -328,7 +333,7 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
       onSaved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Xatolik yuz berdi");
+      setError(e instanceof Error ? e.message : t("drivers.error_save"));
     } finally {
       setSaving(false);
     }
@@ -338,43 +343,43 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md" style={{ background: "rgba(20,22,38,0.98)", backdropFilter: "blur(20px)" }}>
         <DialogHeader>
-          <DialogTitle>{driver ? "Haydovchini tahrirlash" : "Yangi haydovchi"}</DialogTitle>
+          <DialogTitle>{driver ? t("drivers.dialog_edit") : t("drivers.dialog_new")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
-          <Field label="To'liq ism *">
+          <Field label={t("drivers.field_name")}>
             <input
               value={form.full_name} onChange={f("full_name")}
               placeholder="Familiya Ism Otasining ismi"
               className="input-base"
             />
           </Field>
-          <Field label="Davlat raqami *">
+          <Field label={t("drivers.field_plate")}>
             <input
               value={form.vehicle_plate} onChange={f("vehicle_plate")}
               placeholder="01A777AA"
               className="input-base font-mono"
             />
           </Field>
-          <Field label="Qurilma (ixtiyoriy)">
+          <Field label={t("drivers.field_device")}>
             <select value={form.device} onChange={f("device")} className="input-base">
-              <option value="">— Qurilma tanlanmagan —</option>
+              <option value="">{t("drivers.no_device")}</option>
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>{d.device_id} — {d.driver_name}</option>
               ))}
               {driver?.device && driver.device_id && (
-                <option value={String(driver.device)}>{driver.device_id} (hozirgi)</option>
+                <option value={String(driver.device)}>{driver.device_id} {t("drivers.current_device")}</option>
               )}
             </select>
           </Field>
-          <Field label="Telefon (ixtiyoriy)">
+          <Field label={t("drivers.field_phone")}>
             <input
               value={form.phone} onChange={f("phone")}
               placeholder="+998 90 123 45 67"
               className="input-base"
             />
           </Field>
-          <Field label="Izoh (ixtiyoriy)">
+          <Field label={t("drivers.field_notes")}>
             <textarea
               value={form.notes} onChange={f("notes")}
               rows={2}
@@ -392,7 +397,7 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
               onClick={onClose}
               className="flex-1 py-2 rounded-xl border border-border text-text-muted text-[13px] hover:bg-surface-el transition-all"
             >
-              Bekor
+              {t("common.cancel_short")}
             </button>
             <button
               onClick={handleSave}
@@ -400,7 +405,7 @@ function DriverDialog({ open, driver, devices, onClose, onSaved }: {
               className="flex-1 py-2 rounded-xl font-bold text-[13px] transition-all disabled:opacity-50"
               style={{ background: "rgba(var(--accent-rgb),0.2)", border: "1px solid rgba(var(--accent-rgb),0.4)", color: "var(--accent)" }}
             >
-              {saving ? "Saqlanmoqda…" : "Saqlash"}
+              {saving ? t("drivers.saving") : t("common.save")}
             </button>
           </div>
         </div>

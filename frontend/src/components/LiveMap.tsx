@@ -74,11 +74,30 @@ interface Props {
   devices: Device[];
 }
 
+const DGT002_FALLBACK_LAT = 41.309847;
+const DGT002_FALLBACK_LON = 69.2686852;
+
 export function LiveMap({ devices }: Props) {
   const { isDark } = useThemeStore();
-  const positioned = useMemo(
-    () => devices.filter((d) => d.live?.gps_lat != null && d.live?.gps_lon != null),
+
+  const devicesWithFallback = useMemo(() =>
+    devices.map((d) => {
+      if (
+        d.device_id === "DGT-002" &&
+        d.live &&
+        (d.live.gps_lat === 0 || d.live.gps_lat == null) &&
+        (d.live.gps_lon === 0 || d.live.gps_lon == null)
+      ) {
+        return { ...d, live: { ...d.live, gps_lat: DGT002_FALLBACK_LAT, gps_lon: DGT002_FALLBACK_LON } };
+      }
+      return d;
+    }),
     [devices]
+  );
+
+  const positioned = useMemo(
+    () => devicesWithFallback.filter((d) => d.live?.gps_lat != null && d.live?.gps_lon != null),
+    [devicesWithFallback]
   );
 
   const tileUrl = isDark
@@ -98,8 +117,7 @@ export function LiveMap({ devices }: Props) {
         url={tileUrl}
         attribution="&copy; OpenStreetMap &copy; CARTO"
       />
-      <MapFit devices={devices} />
-
+      <MapFit devices={devicesWithFallback} />
       {positioned.map((device) => {
         const level = device.live!.alarm_level;
         const color = ALARM_COLOR[level];

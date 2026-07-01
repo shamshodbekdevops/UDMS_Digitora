@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, ChevronRight, Filter, X } from "lucide-react";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -6,10 +7,10 @@ import { api } from "@/lib/api";
 import { ALARM_COLOR, formatRelativeTime } from "@/lib/utils";
 import type { AlertEvent, AlarmLevel, Device } from "@/types";
 
-const LEVEL_LABELS = ["Xavfsiz", "Diqqat", "Ogohlantirish", "Xavf"];
 const PAGE_SIZE = 25;
 
 export default function History() {
+  const { t } = useTranslation();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [levels, setLevels] = useState<number[]>([]);
@@ -71,13 +72,17 @@ export default function History() {
   const hasFilters = dateFrom || dateTo || levels.length || deviceFilter;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  const LEVEL_LABELS = [
+    t("alarm.level0"), t("alarm.level1"), t("alarm.level2"), t("alarm.level3"),
+  ];
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display font-bold text-text-primary text-lg">Tarix</h1>
-          <p className="text-[12px] text-text-muted mt-0.5">Barcha signal voqealari ro'yxati</p>
+          <h1 className="font-display font-bold text-text-primary text-lg">{t("history.title")}</h1>
+          <p className="text-[12px] text-text-muted mt-0.5">{t("history.subtitle")}</p>
         </div>
         <button
           onClick={exportCsv}
@@ -86,7 +91,7 @@ export default function History() {
           style={{ background: "rgba(var(--accent-rgb),0.15)", border: "1px solid rgba(var(--accent-rgb),0.3)", color: "var(--accent)" }}
         >
           <Download size={13} />
-          CSV yuklab olish
+          {t("history.export_csv")}
         </button>
       </div>
 
@@ -94,13 +99,13 @@ export default function History() {
       <div className="glass rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Filter size={12} className="text-text-muted" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">Filtrlar</span>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">{t("history.filters")}</span>
           {hasFilters && (
             <button
               onClick={() => { setDateFrom(""); setDateTo(""); setLevels([]); setDeviceFilter(""); setPage(1); }}
               className="ml-auto flex items-center gap-1 text-[11px] text-text-muted hover:text-danger transition-colors"
             >
-              <X size={11} /> Tozalash
+              <X size={11} /> {t("history.clear")}
             </button>
           )}
         </div>
@@ -142,7 +147,7 @@ export default function History() {
             onChange={(e) => { setDeviceFilter(e.target.value); setPage(1); }}
             className="rounded-lg border border-border bg-surface-el text-text-primary text-[12px] px-2 py-1.5 outline-none focus:border-accent"
           >
-            <option value="">Barcha qurilmalar</option>
+            <option value="">{t("history.all_devices")}</option>
             {devices.map((d) => (
               <option key={d.device_id} value={d.device_id}>{d.device_id} — {d.driver_name}</option>
             ))}
@@ -152,11 +157,11 @@ export default function History() {
 
       {/* Column headers */}
       <div className="hidden md:grid grid-cols-[1.5fr_90px_90px_70px_1.5fr] gap-3 px-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">
-        <span>Haydovchi / Qurilma</span>
-        <span>Daraja</span>
-        <span>Vaqt</span>
-        <span>PERCLOS</span>
-        <span>Xabar</span>
+        <span>{t("history.col_driver")}</span>
+        <span>{t("history.col_level")}</span>
+        <span>{t("history.col_time")}</span>
+        <span>{t("history.col_perclos")}</span>
+        <span>{t("history.col_message")}</span>
       </div>
 
       {/* Rows */}
@@ -166,8 +171,8 @@ export default function History() {
         ) : events.length === 0 ? (
           <div className="glass rounded-2xl p-12 flex flex-col items-center gap-3 text-center">
             <div style={{ fontSize: 40, opacity: 0.25 }}>📭</div>
-            <p className="font-semibold text-text-primary">Voqealar topilmadi</p>
-            <p className="text-text-muted text-sm">Tanlangan filtrlar bo'yicha ma'lumot mavjud emas</p>
+            <p className="font-semibold text-text-primary">{t("history.empty_title")}</p>
+            <p className="text-text-muted text-sm">{t("history.empty_subtitle")}</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -190,16 +195,16 @@ export default function History() {
             disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
             className="px-3 py-1.5 rounded-lg text-[12px] border border-border text-text-muted hover:border-accent hover:text-accent transition-all disabled:opacity-30"
           >
-            ← Oldingi
+            {t("history.prev")}
           </button>
           <span className="text-[12px] font-mono text-text-muted tabular-nums">
-            {page} / {totalPages} · jami {total}
+            {t("history.page_info", { page, total: totalPages, count: total })}
           </span>
           <button
             disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}
             className="px-3 py-1.5 rounded-lg text-[12px] border border-border text-text-muted hover:border-accent hover:text-accent transition-all disabled:opacity-30"
           >
-            Keyingi →
+            {t("history.next")}
           </button>
         </div>
       )}
@@ -211,6 +216,7 @@ export default function History() {
 function EventRow({ event, expanded, onToggle }: {
   event: AlertEvent; expanded: boolean; onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const color = ALARM_COLOR[event.alarm_level as AlarmLevel];
 
   return (
@@ -268,13 +274,13 @@ function EventRow({ event, expanded, onToggle }: {
                 className="px-4 pb-4 pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t"
                 style={{ borderColor: color + "33", background: color + "08" }}
               >
-                <DetailField label="Vaqt (to'liq)" value={new Date(event.timestamp).toLocaleString("uz-UZ")} />
-                <DetailField label="GPS tezligi" value={event.gps_speed != null ? `${event.gps_speed.toFixed(1)} km/h` : "—"} />
-                <DetailField label="Koordinat" value={event.gps_lat != null ? `${event.gps_lat.toFixed(5)}, ${event.gps_lon?.toFixed(5)}` : "—"} />
-                <DetailField label="Kabina harorati" value={event.cabin_temp != null ? `${event.cabin_temp.toFixed(1)}°C` : "—"} />
-                <DetailField label="Namlik" value={event.cabin_humidity != null ? `${event.cabin_humidity.toFixed(0)}%` : "—"} />
-                <DetailField label="PERCLOS" value={`${(event.perclos * 100).toFixed(2)}%`} />
-                <DetailField label="Xabar" value={event.alarm_msg} span />
+                <DetailField label={t("history.detail_full_time")} value={new Date(event.timestamp).toLocaleString()} />
+                <DetailField label={t("history.detail_speed")} value={event.gps_speed != null ? `${event.gps_speed.toFixed(1)} km/h` : "—"} />
+                <DetailField label={t("history.detail_coord")} value={event.gps_lat != null ? `${event.gps_lat.toFixed(5)}, ${event.gps_lon?.toFixed(5)}` : "—"} />
+                <DetailField label={t("history.detail_temp")} value={event.cabin_temp != null ? `${event.cabin_temp.toFixed(1)}°C` : "—"} />
+                <DetailField label={t("history.detail_humidity")} value={event.cabin_humidity != null ? `${event.cabin_humidity.toFixed(0)}%` : "—"} />
+                <DetailField label={t("history.detail_perclos")} value={`${(event.perclos * 100).toFixed(2)}%`} />
+                <DetailField label={t("history.detail_message")} value={event.alarm_msg} span />
               </div>
             </motion.div>
           )}

@@ -91,7 +91,7 @@ export default function DriverDetail() {
           <div className="flex items-center gap-2 mb-2.5">
             <div className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
             <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
-              Jonli kamera oqimi
+              {t("driver.live_camera")}
             </span>
           </div>
           <LiveCameraFeed

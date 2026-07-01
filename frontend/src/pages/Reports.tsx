@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -13,9 +14,6 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useMockWs } from "@/hooks/useMockWs";
 import type { AlertEvent, AlarmLevel, WsPacket } from "@/types";
 
-const LEVEL_LABELS = ["Xavfsiz", "Diqqat", "Ogohlantirish", "Xavf"];
-
-/* ── Count-up hook ─────────────────────────────────────────── */
 function useCountUp(target: number, duration = 500): number {
   const [value, setValue] = useState(target);
   const prev = useRef(target);
@@ -38,7 +36,6 @@ function useCountUp(target: number, duration = 500): number {
   return value;
 }
 
-/* ── Tooltip style ─────────────────────────────────────────── */
 const TOOLTIP_STYLE = {
   background: "rgba(20,22,38,0.95)",
   border: "1px solid rgba(138,148,255,0.18)",
@@ -48,7 +45,6 @@ const TOOLTIP_STYLE = {
   backdropFilter: "blur(12px)",
 };
 
-/* ── Active pie shape ──────────────────────────────────────── */
 function ActivePieShape(props: any) {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
   return (
@@ -66,6 +62,7 @@ function ActivePieShape(props: any) {
 }
 
 export default function Reports() {
+  const { t } = useTranslation();
   const devices = useFleetStore((s) => s.devices);
   const [todayEvents, setTodayEvents] = useState<AlertEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +76,10 @@ export default function Reports() {
     return `${base.replace(/\/$/, "")}/ws/dms/`;
   }, []);
   const allowMock = import.meta.env.VITE_USE_MOCK_WS === "true";
+
+  const LEVEL_LABELS = useMemo(() => [
+    t("alarm.level0"), t("alarm.level1"), t("alarm.level2"), t("alarm.level3"),
+  ], [t]);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -131,7 +132,6 @@ export default function Reports() {
 
   useMockWs(handlePacket, allowMock && mockFallback);
 
-  /* ── Stats ──────────────────────────────────────────────── */
   const alertsToday = todayEvents.filter((e) => e.alarm_level > 0).length;
   const avgPerclos = devices.length > 0
     ? devices.reduce((s, d) => s + (d.live?.perclos ?? 0), 0) / devices.length
@@ -151,7 +151,6 @@ export default function Reports() {
   const animPerclos = useCountUp(Math.round(avgPerclos * 100));
   const animRisk = useCountUp(atRisk?.count ?? 0);
 
-  /* ── Chart data ─────────────────────────────────────────── */
   const barData = Object.entries(byDriver)
     .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 10)
@@ -174,34 +173,34 @@ export default function Reports() {
 
   return (
     <div className="space-y-5 pb-4">
-      <h1 className="font-display font-bold text-text-primary text-lg">Hisobot</h1>
+      <h1 className="font-display font-bold text-text-primary text-lg">{t("reports.title")}</h1>
 
-      {/* ── Section A: Summary cards ─────────────────────── */}
+      {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryCard icon={<Users size={16} />} label="Jami haydovchilar" value={`${Math.round(animTotal)}`} color="accent" />
-        <SummaryCard icon={<Bell size={16} />} label="Bugungi signallar" value={`${Math.round(animAlerts)}`} color="warning" />
-        <SummaryCard icon={<Eye size={16} />} label="O'rtacha PERCLOS" value={`${Math.round(animPerclos)}%`} color="caution" />
+        <SummaryCard icon={<Users size={16} />} label={t("reports.stat_drivers")} value={`${Math.round(animTotal)}`} color="accent" />
+        <SummaryCard icon={<Bell size={16} />} label={t("reports.stat_alerts")} value={`${Math.round(animAlerts)}`} color="warning" />
+        <SummaryCard icon={<Eye size={16} />} label={t("reports.stat_perclos")} value={`${Math.round(animPerclos)}%`} color="caution" />
         <SummaryCard
           icon={<TrendingUp size={16} />}
-          label="Xavfli haydovchi"
+          label={t("reports.stat_risky")}
           value={atRisk ? atRisk.name.split(" ")[0] : "—"}
-          sub={atRisk ? `${Math.round(animRisk)} signal` : undefined}
+          sub={atRisk ? `${Math.round(animRisk)} ${t("reports.alerts_suffix")}` : undefined}
           color="danger"
         />
       </div>
 
-      {/* ── Section B + C: Charts ────────────────────────── */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Bar chart */}
         <div className="glass rounded-2xl p-4">
           <h2 className="font-display font-semibold text-text-primary text-sm mb-3 flex items-center gap-2">
             <Bell size={14} className="text-warning" />
-            Haydovchi bo'yicha signallar (bugun)
+            {t("reports.bar_title")}
           </h2>
           {loading ? (
             <div className="skeleton h-48 rounded-xl" />
           ) : barData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-text-muted text-sm">Ma'lumot yo'q</div>
+            <div className="h-48 flex items-center justify-center text-text-muted text-sm">{t("reports.no_data")}</div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
@@ -233,7 +232,7 @@ export default function Reports() {
           {selectedDriver && (
             <button onClick={() => setSelectedDriver(null)}
               className="mt-2 text-[11px] text-text-muted hover:text-accent transition-colors">
-              × Filtrni tozalash
+              {t("reports.clear_filter")}
             </button>
           )}
         </div>
@@ -242,12 +241,12 @@ export default function Reports() {
         <div className="glass rounded-2xl p-4">
           <h2 className="font-display font-semibold text-text-primary text-sm mb-3 flex items-center gap-2">
             <TrendingUp size={14} className="text-accent" />
-            Signal darajalari taqsimoti (bugun)
+            {t("reports.pie_title")}
           </h2>
           {loading ? (
             <div className="skeleton h-48 rounded-xl" />
           ) : pieData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-text-muted text-sm">Ma'lumot yo'q</div>
+            <div className="h-48 flex items-center justify-center text-text-muted text-sm">{t("reports.no_data")}</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -273,18 +272,18 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* ── Section D: Live table ────────────────────────── */}
+      {/* Live events table */}
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-2 h-2 rounded-full bg-safe animate-pulse" />
           <h2 className="font-display font-semibold text-text-primary text-sm">
-            Jonli voqealar {selectedDriver && <span className="text-accent">— {selectedDriver}</span>}
+            {t("reports.live_title")} {selectedDriver && <span className="text-accent">— {selectedDriver}</span>}
           </h2>
-          <span className="ml-auto text-[11px] font-mono text-text-muted">{sectionD.length} ta</span>
+          <span className="ml-auto text-[11px] font-mono text-text-muted">{t("reports.events_count", { count: sectionD.length })}</span>
         </div>
 
         {sectionD.length === 0 ? (
-          <div className="text-center py-8 text-text-muted text-sm">Hozircha voqealar yo'q</div>
+          <div className="text-center py-8 text-text-muted text-sm">{t("reports.no_events")}</div>
         ) : (
           <div className="space-y-1 max-h-72 overflow-y-auto">
             <AnimatePresence mode="popLayout">
@@ -313,7 +312,7 @@ export default function Reports() {
                       {(e.perclos * 100).toFixed(0)}%
                     </span>
                     <span className="text-text-muted font-mono shrink-0 text-[11px]">
-                      {new Date(e.timestamp).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      {new Date(e.timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                     </span>
                   </motion.div>
                 );

@@ -1,15 +1,15 @@
 import { useRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RiskPulse } from "@/components/RiskPulse";
-import { LiveCameraFeed } from "@/components/LiveCameraFeed";
 import { Badge } from "@/components/ui/badge";
 import { ALARM_TEXT_CLASS, ALARM_BG_CLASS, formatRelativeTime } from "@/lib/utils";
-import { Gauge, Eye, Wifi } from "lucide-react";
-import type { Device, AlarmLevel } from "@/types";
+import { Gauge, Eye, Wifi, WifiOff } from "lucide-react";
+import type { Device } from "@/types";
 
-const STREAM_URL = import.meta.env.VITE_STREAM_BASE_URL
-  ? `${import.meta.env.VITE_STREAM_BASE_URL}/offer`
-  : null;
+function isOnline(lastSeen?: string | null): boolean {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < 30_000;
+}
 
 const BADGE_VARIANT = ["safe", "caution", "warning", "danger"] as const;
 
@@ -104,10 +104,17 @@ export function DriverCard({ device, onClick }: Props) {
 
         {/* Stats */}
         <div className="mt-2.5 flex items-center gap-3 text-[12px]">
-          <span className="flex items-center gap-1 text-safe">
-            <Wifi size={11} />
-            <span className="font-mono">{t("ws.connected")}</span>
-          </span>
+          {isOnline(live?.last_seen) ? (
+            <span className="flex items-center gap-1 text-safe">
+              <Wifi size={11} />
+              <span className="font-mono">{t("driver.online")}</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-text-muted">
+              <WifiOff size={11} />
+              <span className="font-mono">{t("driver.offline")}</span>
+            </span>
+          )}
 
           {live?.gps_speed != null && (
             <span className="flex items-center gap-1 text-text-muted">
@@ -129,17 +136,6 @@ export function DriverCard({ device, onClick }: Props) {
           )}
         </div>
 
-        {/* Mini video thumbnail — only when stream URL is configured */}
-        {STREAM_URL && (
-          <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
-            <LiveCameraFeed
-              deviceId={device.device_id}
-              streamUrl={STREAM_URL}
-              alarmLevel={level as AlarmLevel}
-              small
-            />
-          </div>
-        )}
       </div>
     </button>
   );

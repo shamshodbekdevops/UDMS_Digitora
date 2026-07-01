@@ -48,7 +48,7 @@ export default function Settings() {
       {/* Header */}
       <div>
         <h1 className="font-display font-bold text-text-primary text-lg">{t("settings.title")}</h1>
-        <p className="text-[12px] text-text-muted mt-0.5">Hisob va xizmat sozlamalari</p>
+        <p className="text-[12px] text-text-muted mt-0.5">{t("settings.account_subtitle")}</p>
       </div>
 
       {/* Main content */}
@@ -164,7 +164,7 @@ function ProfileTab({ user, setUser, loading, setLoading }: {
           disabled
           className="w-full rounded-xl border border-border bg-surface-el/50 px-4 py-2.5 text-text-muted text-[14px] outline-none opacity-60"
         />
-        <p className="text-[11px] text-text-muted mt-1">Email address cannot be changed</p>
+        <p className="text-[11px] text-text-muted mt-1">{t("settings.email_readonly")}</p>
       </div>
 
       <div>
@@ -207,7 +207,7 @@ function ProfileTab({ user, setUser, loading, setLoading }: {
         {saved && (
           <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-safe/10 text-safe text-[12px] font-semibold">
             <Check size={14} />
-            Saved
+            {t("settings.saved_msg")}
           </div>
         )}
       </div>
@@ -240,15 +240,15 @@ function AccountTab({ user, deviceCount }: { user: UserType | null; deviceCount:
         <div className="rounded-2xl border border-accent/30 bg-accent/8 p-4 space-y-3">
           <p className="font-semibold text-text-primary">{t("settings.upgrade_to_business")}</p>
           <ul className="text-[13px] text-text-muted space-y-1">
-            <li>✓ Full fleet management</li>
-            <li>✓ Advanced analytics</li>
-            <li>✓ Priority support</li>
+            <li>✓ {t("settings.feature_fleet")}</li>
+            <li>✓ {t("settings.feature_analytics")}</li>
+            <li>✓ {t("settings.feature_support")}</li>
           </ul>
           <a
             href="mailto:sales@digitora.uz"
             className="inline-flex px-3 py-2 rounded-lg bg-accent text-white text-[12px] font-bold transition-all hover:bg-accent/90"
           >
-            Contact sales
+            {t("settings.contact_sales")}
           </a>
         </div>
       )}
@@ -281,23 +281,23 @@ function BillingTab() {
   return (
     <div className="glass rounded-2xl p-6 space-y-6">
       <div>
-        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">Current Plan</p>
-        <p className="text-[18px] font-bold text-text-primary">Business — $49/month</p>
+        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">{t("settings.current_plan")}</p>
+        <p className="text-[18px] font-bold text-text-primary">{t("settings.business_plan")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">Next Billing</p>
+          <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">{t("settings.billing_next")}</p>
           <p className="text-text-primary">August 1, 2026</p>
         </div>
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">Devices Used</p>
+          <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-2">{t("settings.billing_devices_used")}</p>
           <p className="text-text-primary">3 / 10</p>
         </div>
       </div>
 
       <div>
-        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-3">Usage This Month</p>
+        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-3">{t("settings.billing_usage")}</p>
         <div className="h-2 bg-surface-el rounded-full overflow-hidden">
           <div className="h-full w-3/5 bg-accent transition-all" />
         </div>
@@ -305,7 +305,7 @@ function BillingTab() {
       </div>
 
       <div>
-        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-3">Invoice History</p>
+        <p className="text-[12px] font-bold uppercase tracking-widest text-text-muted mb-3">{t("settings.invoice_history")}</p>
         <div className="space-y-2">
           {[
             { date: "July 1, 2026", amount: "$49.00", status: "Paid" },
@@ -319,7 +319,7 @@ function BillingTab() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-safe/10 text-safe">
-                  {invoice.status}
+                  {t("settings.paid")}
                 </span>
                 <a href="#" className="text-[11px] text-accent hover:underline">
                   PDF
@@ -439,9 +439,9 @@ function NotificationsTab() {
           onChange={(e) => setSensitivity(parseInt(e.target.value) as 1 | 2 | 3)}
           className="w-full rounded-xl border border-border bg-surface-el px-4 py-2.5 text-text-primary text-[14px] outline-none focus:border-accent transition-colors"
         >
-          <option value={1}>Level 1 (Caution)</option>
-          <option value={2}>Level 2 (Warning)</option>
-          <option value={3}>Level 3 (Danger Only)</option>
+          <option value={1}>{t("settings.level_caution")}</option>
+          <option value={2}>{t("settings.level_warning")}</option>
+          <option value={3}>{t("settings.level_danger")}</option>
         </select>
       </div>
     </div>
