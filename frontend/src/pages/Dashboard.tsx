@@ -26,31 +26,6 @@ const INIT_DEVICES: Device[] = [
 ];
 
 /* ─────────────────────────────────────────
-   Count-up animation hook
-───────────────────────────────────────── */
-function useCountUp(target: number, duration = 500): number {
-  const [value, setValue] = useState(target);
-  const prev = useRef(target);
-  const raf = useRef(0);
-  useEffect(() => {
-    const from = prev.current;
-    prev.current = target;
-    if (Math.abs(target - from) < 0.5) { setValue(target); return; }
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      setValue(from + (target - from) * ease);
-      if (t < 1) raf.current = requestAnimationFrame(tick);
-    };
-    cancelAnimationFrame(raf.current);
-    raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
-  }, [target, duration]);
-  return value;
-}
-
-/* ─────────────────────────────────────────
    Level metadata
 ───────────────────────────────────────── */
 function useLevelMeta() {
@@ -74,14 +49,6 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
     : 100;
   const healthColor = health >= 85 ? "#3DDC84" : health >= 60 ? "#F2C94C" : health >= 35 ? "#FF8A3D" : "#FF4757";
 
-  const animHealth = useCountUp(health);
-  const a0 = useCountUp(counts[0]);
-  const a1 = useCountUp(counts[1]);
-  const a2 = useCountUp(counts[2]);
-  const a3 = useCountUp(counts[3]);
-  const animTotal = useCountUp(total);
-  const animVals = [a0, a1, a2, a3];
-
   return (
     <div
       className="shrink-0 flex divide-x border-b"
@@ -91,14 +58,18 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
       <div className="flex items-center gap-3 px-5 py-3 min-w-[160px]">
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-          style={{ background: `${healthColor}1A`, border: `1.5px solid ${healthColor}50` }}
+          style={{
+            background: `${healthColor}1A`,
+            border: `1.5px solid ${healthColor}50`,
+            transition: "background 0.4s, border-color 0.4s",
+          }}
         >
-          <TrendingUp size={16} style={{ color: healthColor }} />
+          <TrendingUp size={16} style={{ color: healthColor, transition: "color 0.4s" }} />
         </div>
         <div>
           <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">{t("dashboard.fleet_health")}</div>
-          <div className="font-display font-black tabular-nums leading-none" style={{ fontSize: 28, color: healthColor }}>
-            {Math.round(animHealth)}<span style={{ fontSize: 14, opacity: 0.7 }}>%</span>
+          <div className="font-display font-black tabular-nums leading-none" style={{ fontSize: 28, color: healthColor, transition: "color 0.4s" }}>
+            {health}<span style={{ fontSize: 14, opacity: 0.7 }}>%</span>
           </div>
         </div>
       </div>
@@ -110,7 +81,7 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
           <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{t("dashboard.total")}</span>
         </div>
         <div className="font-display font-black text-text-primary tabular-nums" style={{ fontSize: 26 }}>
-          {Math.round(animTotal)}
+          {total}
         </div>
         <div className="text-[10px] text-text-muted font-medium mt-0.5">{t("dashboard.drivers_suffix")}</div>
       </div>
@@ -119,11 +90,15 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
       {levelMeta.map((meta, lvl) => {
         const Icon = meta.icon;
         const isDanger = lvl === 3 && counts[lvl] > 0;
+        const active = counts[lvl] > 0;
         return (
           <div
             key={lvl}
-            className="flex flex-col items-center justify-center px-4 py-3 flex-1 transition-colors duration-300"
-            style={{ background: counts[lvl] > 0 ? meta.bg : undefined }}
+            className="flex flex-col items-center justify-center px-4 py-3 flex-1"
+            style={{
+              background: active ? meta.bg : undefined,
+              transition: "background 0.4s",
+            }}
           >
             <div className="flex items-center gap-1.5 mb-1">
               <div
@@ -135,7 +110,7 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
               />
               <span
                 className="text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: counts[lvl] > 0 ? meta.color : "var(--text-muted)" }}
+                style={{ color: active ? meta.color : "var(--text-muted)", transition: "color 0.4s" }}
               >
                 {meta.label}
               </span>
@@ -144,13 +119,14 @@ function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: numbe
               className="font-display font-black tabular-nums leading-none"
               style={{
                 fontSize: 26,
-                color: counts[lvl] > 0 ? meta.color : "var(--text-muted)",
+                color: active ? meta.color : "var(--text-muted)",
                 animation: isDanger ? "health-pulse 1.1s ease-in-out infinite" : undefined,
+                transition: "color 0.4s",
               }}
             >
-              {Math.round(animVals[lvl])}
+              {counts[lvl]}
             </div>
-            <Icon size={10} className="mt-1" style={{ color: counts[lvl] > 0 ? meta.color : "var(--text-muted)", opacity: 0.6 }} />
+            <Icon size={10} className="mt-1" style={{ color: active ? meta.color : "var(--text-muted)", opacity: 0.6, transition: "color 0.4s" }} />
           </div>
         );
       })}
