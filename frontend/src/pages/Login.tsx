@@ -191,14 +191,18 @@ export default function Login() {
           style={{ background: "linear-gradient(145deg, #06245C 0%, #0B3DAD 40%, #1254C5 70%, #1869D4 100%)" }}
         />
 
-        {/* Dark mode decorations: shooting stars + nebula */}
+        {/* Dark mode decorations: shooting stars + nebula accents */}
         <div className="cosmic-dark absolute inset-0 overflow-hidden pointer-events-none">
           <ShootingStars />
-          {/* Nebula accent */}
           <div style={{
-            position: "absolute", bottom: "12%", left: "5%",
-            width: 280, height: 280, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(80,60,180,0.18) 0%, transparent 68%)",
+            position: "absolute", bottom: "10%", left: "5%",
+            width: 300, height: 300, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(80,60,180,0.22) 0%, transparent 65%)",
+          }} />
+          <div style={{
+            position: "absolute", top: "15%", right: "8%",
+            width: 220, height: 220, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(45,27,105,0.28) 0%, transparent 65%)",
           }} />
         </div>
 
@@ -258,16 +262,25 @@ export default function Login() {
       {/* ══════════════ RIGHT FORM ══════════════ */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-10 min-h-screen lg:min-h-0">
 
-        {/* Mobile logo */}
-        <div className="lg:hidden flex items-center gap-2.5 mb-8">
-          <div className="w-10 h-10 rounded-xl overflow-hidden"
-            style={{ background: "linear-gradient(135deg, var(--accent-warm), var(--accent))" }}>
+        {/* Logo above card — all sizes */}
+        <div className="flex flex-col items-center mb-7" style={{ animation: "card-rise 0.3s ease-out both" }}>
+          <div
+            className="rounded-3xl overflow-hidden shadow-2xl mb-3"
+            style={{
+              width: 90, height: 90,
+              background: "linear-gradient(135deg, rgba(108,142,255,0.25), rgba(108,142,255,0.08))",
+              border: "1.5px solid rgba(138,148,255,0.32)",
+              boxShadow: "0 16px 48px rgba(108,142,255,0.22)",
+            }}
+          >
             <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
-          <div>
-            <span className="font-display font-black text-text-primary text-xl tracking-widest">UDMS</span>
-            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>created by Digitora</p>
-          </div>
+          <p className="font-display font-black text-text-primary tracking-[0.18em] leading-none" style={{ fontSize: 22 }}>
+            UDMS
+          </p>
+          <p className="mt-1.5" style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+            created by Digitora
+          </p>
         </div>
 
         {/* Form card */}
@@ -278,11 +291,11 @@ export default function Login() {
           <div
             className="rounded-3xl p-8 lg:p-9"
             style={{
-              background: "var(--surface)",
+              background: "var(--login-card-bg)",
               backdropFilter: "blur(24px) saturate(150%)",
               WebkitBackdropFilter: "blur(24px) saturate(150%)",
-              border: "1.5px solid var(--border)",
-              boxShadow: "0 24px 80px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.1)",
+              border: "1px solid var(--login-card-border)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.1)",
             }}
           >
             {/* Heading */}

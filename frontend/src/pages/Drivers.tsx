@@ -78,7 +78,7 @@ export default function Drivers() {
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 btn-press"
           style={{ background: "rgba(var(--accent-rgb),0.18)", border: "1px solid rgba(var(--accent-rgb),0.35)", color: "var(--accent)" }}
         >
           <Plus size={14} />

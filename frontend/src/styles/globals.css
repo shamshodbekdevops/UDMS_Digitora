@@ -6,6 +6,8 @@
    DARK — "Galaktika" (DEFAULT)
    ═══════════════════════════════════════════════════════════ */
 :root {
+  --login-card-bg:     rgba(15, 12, 35, 0.62);
+  --login-card-border: rgba(138, 148, 255, 0.22);
   --bg:           #05060F;
   --surface:      rgba(20, 22, 38, 0.65);
   --surface-el:   rgba(28, 30, 50, 0.78);
@@ -27,6 +29,8 @@
    LIGHT — "Atmosfera"
    ═══════════════════════════════════════════════════════════ */
 html.light {
+  --login-card-bg:     rgba(255, 255, 255, 0.88);
+  --login-card-border: rgba(43, 111, 224, 0.18);
   --bg:           #EAF4FF;
   --surface:      rgba(255, 255, 255, 0.85);
   --surface-el:   #FFFFFF;
@@ -96,22 +100,40 @@ html.light .cosmic-light { opacity: 1; }
 
 @keyframes nebula-drift-1 {
   0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(20px, -15px) scale(1.04); }
+  50%  { transform: translate(20px, -15px) scale(1.05); }
   100% { transform: translate(0, 0) scale(1); }
 }
 @keyframes nebula-drift-2 {
   0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(-15px, 20px) scale(1.03); }
+  50%  { transform: translate(-15px, 20px) scale(1.04); }
   100% { transform: translate(0, 0) scale(1); }
 }
-@keyframes twinkle-slow {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 1; }
+@keyframes nebula-drift-3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(12px, 18px) scale(1.03); }
+  100% { transform: translate(0, 0) scale(1); }
 }
-@keyframes twinkle-fast {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 0.1; }
+@keyframes nebula-drift-4 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-18px, -10px) scale(1.04); }
+  100% { transform: translate(0, 0) scale(1); }
 }
+/* Star twinkle — 3 layer, different speeds */
+@keyframes twinkle-small {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.95; }
+}
+@keyframes twinkle-medium {
+  0%, 100% { opacity: 0.25; }
+  50%       { opacity: 0.85; }
+}
+@keyframes twinkle-bright {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%       { opacity: 1;    transform: scale(1.15); }
+}
+/* legacy aliases */
+@keyframes twinkle-slow { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes twinkle-fast { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.1; } }
 
 /* ═══════════════════════════════════════════════════════════
    GLASSMORPHISM helper class

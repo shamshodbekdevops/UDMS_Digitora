@@ -54,21 +54,34 @@ export default function Register() {
 
   return (
     <div className="page-shell min-h-screen flex items-center justify-center p-4 text-text-primary">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-caution/10 blur-3xl" />
-      </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl glass mb-3 shadow-[0_12px_40px_rgba(var(--accent-rgb),0.18)]">
-            <span className="font-display font-bold text-accent text-xl">D</span>
+          <div
+            className="inline-flex items-center justify-center rounded-3xl mb-3 overflow-hidden"
+            style={{
+              width: 80, height: 80,
+              background: "linear-gradient(135deg, rgba(108,142,255,0.25), rgba(108,142,255,0.08))",
+              border: "1.5px solid rgba(138,148,255,0.3)",
+              boxShadow: "0 12px 40px rgba(108,142,255,0.2)",
+            }}
+          >
+            <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
-          <h1 className="font-display font-bold text-xl text-text-primary">{t("brand")}</h1>
+          <h1 className="font-display font-bold text-xl text-text-primary tracking-[0.16em]">UDMS</h1>
+          <p className="text-[11px] text-text-muted mt-0.5" style={{ letterSpacing: "0.06em" }}>created by Digitora</p>
         </div>
 
-        <div className="glass rounded-[1.5rem] p-6 md:p-7 shadow-[0_20px_70px_rgba(0,0,0,0.28)]">
+        <div
+          className="rounded-[1.5rem] p-6 md:p-7 shadow-[0_20px_70px_rgba(0,0,0,0.28)]"
+          style={{
+            background: "var(--login-card-bg)",
+            backdropFilter: "blur(24px) saturate(150%)",
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+            border: "1px solid var(--login-card-border)",
+          }}
+        >
           <h2 className="font-display font-semibold text-lg text-text-primary mb-5">{t("auth.register")}</h2>
 
           {/* Role selector */}

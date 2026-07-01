@@ -231,7 +231,7 @@ export default function Reports() {
           )}
           {selectedDriver && (
             <button onClick={() => setSelectedDriver(null)}
-              className="mt-2 text-[11px] text-text-muted hover:text-accent transition-colors">
+              className="mt-2 text-[11px] text-text-muted hover:text-accent transition-colors btn-press">
               {t("reports.clear_filter")}
             </button>
           )}
@@ -332,7 +332,7 @@ function SummaryCard({ icon, label, value, sub, color }: {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl p-4"
+      className="glass rounded-2xl p-4 card-lift"
       style={{ border: `1px solid var(--${color})/20` }}
     >
       <div className="flex items-center gap-2 mb-2">
