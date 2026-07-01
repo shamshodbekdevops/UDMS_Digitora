@@ -1,163 +1,275 @@
-# DIGITORA DMS — Prompt 4: UI/UX Effects & Final Polish
+# DIGITORA DMS — Production Deploy Prompt
 
-This is the FINAL enhancement pass. The project is functionally
-complete. This prompt is purely about visual quality and UX polish —
-making the difference between "good" and "impressive enough to win".
+## CONTEXT
 
-Go through EVERY page and component and apply the changes below.
-Do not skip any section.
+The project is a full-stack DMS (Driver Monitoring System) dashboard:
+- Backend: Django + DRF + Channels + PostgreSQL + Redis (already running on VPS)
+- Frontend: React + Vite + TypeScript (currently only runs locally)
+- VPS IP: 45.130.164.189 (Kamatera, Singapore, Ubuntu 22.04)
+- Backend is accessible at: http://45.130.164.189:8000
+- Django admin works at: http://45.130.164.189:8000/admin/
 
----
-
-## ENHANCEMENT 1 — Audit and fix ALL remaining visual inconsistencies
-
-Before adding new effects, do a consistency audit:
-- Every card/panel must use the same border-radius (check that new
-  pages added in Prompt 2/3 match the original dashboard)
-- Every modal/dialog must have the glassmorphism treatment
-  (`backdrop-filter: blur(20px)`, semi-transparent background)
-- Every button must have the `scale(0.97)` press micro-interaction
-- Every interactive card must have the `translateY(-2px)` hover lift
-- Font usage must be consistent: Space Grotesk for headings, Inter
-  for body, JetBrains Mono for all numbers/IDs/coordinates
-
-Fix any inconsistencies found before proceeding.
+The problem: Frontend only runs locally on the developer's laptop.
+Goal: Make the full app (frontend + backend) accessible at
+http://45.130.164.189 from ANY device on ANY network.
 
 ---
 
-## ENHANCEMENT 2 — Page transition animations
+## CURRENT PROJECT STRUCTURE
 
-Currently, navigating between pages (sidebar links) is instant.
-Add smooth page transitions using Framer Motion:
-- Outgoing page: `opacity: 1 → 0`, `y: 0 → -8px`, 180ms ease-in
-- Incoming page: `opacity: 0 → 1`, `y: 12px → 0`, 220ms ease-out
-- Wrap the router outlet with a Framer Motion `AnimatePresence` +
-  `motion.div` with these variants
-- The transition should feel snappy, not slow — keep total duration
-  under 400ms combined
+```
+UDMS_Digitora/
+├── docker-compose.yml        ← currently has: db, redis, backend
+├── .env                      ← already on server
+├── backend/                  ← Django app
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── ...
+└── frontend/                 ← React + Vite (NOT yet in docker-compose)
+    ├── package.json
+    ├── vite.config.ts        ← has proxy to localhost:8000
+    ├── .env                  ← only has VITE_STREAM_BASE_URL=http://localhost:8080
+    └── src/
+```
 
----
-
-## ENHANCEMENT 3 — Enhanced Galaxy background (night mode only)
-
-The current Galaxy background has nebula gradients. Enhance it:
-
-### Shooting stars
-Add occasional shooting star animations — a thin bright line that
-streaks across the background, fades in fast and out slow, at random
-positions and angles. Frequency: 1 every 8-15 seconds (random
-interval). Implement as a CSS `@keyframes` animation on a pseudo-element
-or a small Canvas overlay. Max 1-2 shooting stars visible at once.
-
-### Depth layers
-Add a subtle `vignette` effect — a radial gradient overlay, dark at
-the edges, transparent in the center, `pointer-events: none`, on top
-of the star layer but below the UI. This adds visual depth and makes
-the center content area feel more focused.
-
-### Star density variation
-Currently stars are likely uniform. Make them slightly denser toward
-the bottom-right and sparser top-left — just adjust the distribution
-logic slightly. This creates a more natural, asymmetric galaxy feel.
+Current `vite.config.ts` proxy (dev only, not used in production build):
+```ts
+proxy: {
+  "/api": { target: "http://localhost:8000" },
+  "/ws":  { target: "ws://localhost:8000", ws: true }
+}
+```
 
 ---
 
-## ENHANCEMENT 4 — Alert modal improvements
+## WHAT YOU NEED TO DO
 
-The Level 3 alert modal needs two additions:
+### STEP 1 — Create frontend environment files
 
-### Waveform animation while alert is active
-While the Level 3 modal is open, show an animated audio waveform
-visual below the alert message (even if no audio is playing — it's
-purely decorative, reinforcing "ALARM" status). Simple implementation:
-5-7 vertical bars, each animating `scaleY` between 0.3 and 1.0 with
-different `animation-delay` values, colored in `--danger`.
+Create `frontend/.env.production` with:
+```
+VITE_API_URL=http://45.130.164.189:8000
+VITE_WS_URL=ws://45.130.164.189:8000
+VITE_STREAM_BASE_URL=http://45.130.164.189:8080
+```
 
-### Auto-dismiss countdown
-Add a subtle countdown indicator: if the dispatcher doesn't
-acknowledge within 30 seconds, the modal pulses once more (the
-entrance animation replays) to re-grab attention. Do NOT auto-close
-the modal — just re-pulse it. Show a thin progress ring around the
-"Acknowledge" button counting down the 30 seconds (resets if the
-dispatcher hovers over the button, indicating they're looking at it).
+Create `frontend/.env.development` (keep local dev working):
+```
+VITE_API_URL=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000
+VITE_STREAM_BASE_URL=http://localhost:8080
+```
+
+### STEP 2 — Fix API/WebSocket URLs in frontend code
+
+Search ALL frontend source files (`src/`) for hardcoded:
+- `localhost:8000`
+- `ws://localhost`
+- `http://localhost`
+
+Replace ALL of them with the environment variables:
+- `import.meta.env.VITE_API_URL` for HTTP API calls
+- `import.meta.env.VITE_WS_URL` for WebSocket connections
+- `import.meta.env.VITE_STREAM_BASE_URL` for WebRTC video stream
+
+Do NOT miss any hardcoded URLs — check every file in `src/`.
+
+### STEP 3 — Create Nginx config for frontend serving
+
+Create `nginx/nginx.conf`:
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    server {
+        listen 80;
+        server_name 45.130.164.189;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # React SPA — all routes go to index.html
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Proxy API requests to Django backend
+        location /api/ {
+            proxy_pass http://backend:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Proxy WebSocket to Django Channels
+        location /ws/ {
+            proxy_pass http://backend:8000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_read_timeout 86400;
+        }
+
+        # Static files caching
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+}
+```
+
+### STEP 4 — Create frontend Dockerfile
+
+Create `frontend/Dockerfile`:
+```dockerfile
+# Stage 1: Build
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY ../nginx/nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### STEP 5 — Update docker-compose.yml
+
+Add `frontend` and `nginx` services to the existing `docker-compose.yml`.
+Keep ALL existing services (db, redis, backend) UNCHANGED.
+Only ADD these new services:
+
+```yaml
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: digitora-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: digitora-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+```
+
+Also update the `backend` service to remove the direct port exposure
+(since Nginx will proxy to it, we don't want port 8000 exposed directly
+to the internet — only Nginx's port 80 should be public).
+Change in backend service:
+```yaml
+# Remove or comment out:
+# ports:
+#   - "8000:8000"
+# Keep it accessible within Docker network only (no ports: needed)
+```
+
+IMPORTANT: Port 8000 should still work for direct access during
+transition — so keep `ports: ["8000:8000"]` for now, remove later.
+
+### STEP 6 — Update ALLOWED_HOSTS in .env
+
+The `.env` file on the server currently has:
+```
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,45.130.164.189
+```
+
+This is correct. But also check `backend/config/settings.py` or
+wherever `ALLOWED_HOSTS` is defined — make sure it reads from the
+environment variable, not hardcoded.
+
+### STEP 7 — Add CORS settings for production
+
+In Django settings, ensure `CORS_ALLOWED_ORIGINS` includes the
+server IP. If using `django-cors-headers`, add:
+```python
+CORS_ALLOWED_ORIGINS = [
+    "http://45.130.164.189",
+    "http://45.130.164.189:8000",
+    "http://localhost:5173",  # keep for local dev
+    "http://localhost:3000",
+]
+```
+
+Or use `CORS_ALLOW_ALL_ORIGINS = True` for hackathon (simpler).
+
+### STEP 8 — Git push and server deploy commands
+
+After making ALL the above changes, do the following:
+
+**On the developer's laptop:**
+```bash
+git add .
+git commit -m "feat: production deploy setup - nginx, docker, env"
+git push origin main
+```
+
+**Then provide the exact commands to run on the server
+(via SSH at 45.130.164.189):**
+```bash
+cd /root/UDMS_Digitora
+git pull origin main
+docker compose down
+docker compose up -d --build
+```
+
+**Verify everything works:**
+```bash
+docker compose ps
+docker compose logs nginx --tail=20
+docker compose logs frontend --tail=20
+docker compose logs backend --tail=20
+```
+
+### STEP 9 — Final verification
+
+After deploy, these URLs should work:
+- `http://45.130.164.189` → React dashboard (main app)
+- `http://45.130.164.189/api/` → Django REST API
+- `ws://45.130.164.189/ws/dms/` → WebSocket (for Jetson + dashboard)
+- `http://45.130.164.189:8000/admin/` → Django admin (keep working)
 
 ---
 
-## ENHANCEMENT 5 — Dashboard page micro-details
+## IMPORTANT NOTES
 
-### Live indicator in header
-Next to the "DIGITORA" logo, add a small animated "LIVE" badge:
-a red dot (using `--danger` color) with a continuous, very subtle
-pulse animation, followed by the text "LIVE". This communicates to
-the dispatcher that the dashboard is actively receiving data.
-When the WebSocket is disconnected, the dot turns gray and text
-changes to "OFFLINE".
+1. Do NOT break the existing backend — it's already running on the
+   server and receiving WebSocket data from the Python DMS script.
 
-### Driver card — last seen timestamp
-On each driver card in the dashboard list, add a small "Last seen:
-X seconds ago" line below the driver name, updating every second
-(use a `setInterval` that re-renders just this text — not the whole
-card). Color it `--text-muted` when recent (< 30s), `--caution` when
-stale (30s-2min), `--danger` when very stale (> 2min, suggesting
-connection loss).
+2. The `windows.py` and `jetson.py` scripts connect to:
+   `WS_HOST = "45.130.164.189"` on port `8000`
+   This should keep working (don't remove port 8000 from backend).
 
-### Map — fit bounds on load
-When the map loads, if there are multiple device markers, automatically
-fit the map bounds to show all markers (Leaflet `map.fitBounds()`).
-When a new marker appears (new device connects), smoothly pan to
-include it.
+3. After this deploy, ANY device (phone, tablet, laptop) connected
+   to ANY network (WiFi, 4G, hotspot) can open:
+   `http://45.130.164.189`
+   and see the full real-time dashboard.
+
+4. For the hackathon demo: the judges can open the dashboard on their
+   own phones/laptops by simply visiting `http://45.130.164.189`
+   — no local network, no special setup required.
 
 ---
 
-## ENHANCEMENT 6 — Reports page chart polish
-
-The Recharts charts added in Prompt 2 need visual polish:
-
-- Chart background: transparent (no white box — the glassmorphism
-  card provides the background)
-- All axis text: `--text-muted` color, 11px, Inter font
-- Grid lines: `--border` color, dashed, very subtle (opacity 0.4)
-- Bar chart: add `radius={[4, 4, 0, 0]}` on bars (rounded top corners)
-- Bar chart: add a subtle gradient fill (top: full color, bottom:
-  60% opacity) — use Recharts `linearGradient` defs
-- Pie chart: add `stroke="transparent"` to remove white gaps between
-  slices
-- All chart tooltips: glassmorphism style (already specified in
-  Prompt 2, confirm it's actually applied consistently)
-- Add a chart loading skeleton (shimmer, same style as other
-  skeletons) that shows while data is fetching
-
----
-
-## ENHANCEMENT 7 — Accessibility and UX quality-of-life
-
-These don't affect visual design but improve UX score:
-
-- All icon-only buttons must have `aria-label` and a shadcn/ui
-  `Tooltip` that appears on hover (150ms delay)
-- Keyboard navigation: pressing `Escape` closes any open modal,
-  popover, or notification panel
-- When a Level 3 alert arrives and notifications are ON, briefly
-  change the browser tab title to "⚠️ ALERT — DIGITORA DMS" and
-  restore it after 5 seconds (or when acknowledged)
-- Add a "Jump to top" button that appears after scrolling 300px on
-  long pages (History, Reports) — subtle, bottom-right corner,
-  glassmorphism style
-
----
-
-## FINAL CHECK
-
-After all enhancements are applied:
-1. Run the app and navigate through EVERY page
-2. Toggle between dark and light mode — confirm smooth transition
-   on all pages including the new ones
-3. Confirm the Galaxy background shooting stars appear in dark mode
-4. Trigger a mock Level 3 alert (via mock WebSocket or direct state
-   manipulation) and confirm: modal animates correctly, waveform
-   shows, countdown ring works, bell badge increments, tab title
-   changes
-5. Check that NO orange/carrot accent color remains anywhere
-   (use browser DevTools color picker if needed)
-
-Report what you find and fix anything that fails.
+Start with Step 1 and proceed through all steps in order.
+After completing each step, confirm before moving to the next.

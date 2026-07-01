@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFleetStore } from "@/store/fleet";
 import { useNotificationStore } from "@/store/notifications";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { useMockWs } from "@/hooks/useMockWs";
 import { LiveMap } from "@/components/LiveMap";
 import { DriverCard } from "@/components/DriverCard";
@@ -17,18 +18,11 @@ import {
 } from "lucide-react";
 
 /* ─────────────────────────────────────────
-   Mock initial devices
+   Initial devices
 ───────────────────────────────────────── */
 const INIT_DEVICES: Device[] = [
   { id:1, device_id:"DGT-001", driver_name:"Shamshod Toshqobilov", vehicle_plate:"01A777AA", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.2995,gps_lon:69.2401,gps_speed:0,perclos:0}},
   { id:2, device_id:"DGT-002", driver_name:"Bobur Rahimov",        vehicle_plate:"30B456BB", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.3113,gps_lon:69.2797,gps_speed:0,perclos:0}},
-  { id:3, device_id:"DGT-003", driver_name:"Jasur Yusupov",        vehicle_plate:"01A123CC", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.5522,gps_lon:69.1341,gps_speed:0,perclos:0}},
-  { id:4, device_id:"DGT-004", driver_name:"Dilshod Nazarov",      vehicle_plate:"75K789DD", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:40.9983,gps_lon:69.3342,gps_speed:0,perclos:0}},
-  { id:5, device_id:"DGT-005", driver_name:"Sanjar Karimov",       vehicle_plate:"01B234EE", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.0211,gps_lon:71.4736,gps_speed:0,perclos:0}},
-  { id:6, device_id:"DGT-006", driver_name:"Ulugbek Mirzayev",     vehicle_plate:"30C567FF", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:40.3696,gps_lon:71.7975,gps_speed:0,perclos:0}},
-  { id:7, device_id:"DGT-007", driver_name:"Behruz Xasanov",       vehicle_plate:"01A890GG", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:39.6547,gps_lon:66.9758,gps_speed:0,perclos:0}},
-  { id:8, device_id:"DGT-008", driver_name:"Timur Ergashev",       vehicle_plate:"75K123HH", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.4023,gps_lon:69.5102,gps_speed:0,perclos:0}},
-  { id:9, device_id:"DGT-009", driver_name:"Nodir Abdullayev",     vehicle_plate:"01B456II", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:40.7891,gps_lon:72.3441,gps_speed:0,perclos:0}},
 ];
 
 /* ─────────────────────────────────────────
@@ -72,7 +66,7 @@ function useLevelMeta() {
 /* ─────────────────────────────────────────
    KPI metrics row
 ───────────────────────────────────────── */
-function KpiRow({ counts, total }: { counts: number[]; total: number }) {
+function KpiRow({ counts, total, streamLabel }: { counts: number[]; total: number; streamLabel: string }) {
   const { t } = useTranslation();
   const levelMeta = useLevelMeta();
   const health = total > 0
@@ -171,7 +165,7 @@ function KpiRow({ counts, total }: { counts: number[]; total: number }) {
           <span className="w-2 h-2 rounded-full bg-safe animate-pulse" />
           <span className="font-mono font-bold text-safe" style={{ fontSize: 13 }}>{t("dashboard.live")}</span>
         </div>
-        <div className="text-[10px] text-text-muted font-mono mt-1">{t("ws.mock")}</div>
+        <div className="text-[10px] text-text-muted font-mono mt-1">{streamLabel}</div>
       </div>
     </div>
   );
@@ -275,9 +269,15 @@ export default function Dashboard() {
   const addNotification = useNotificationStore((s) => s.addFromPacket);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "alert">("all");
+  const [mockFallback, setMockFallback] = useState(false);
 
   const [alertQueue, setAlertQueue] = useState<WsPacket[]>([]);
   const lastAlertTime = useRef<Record<string, number>>({});
+  const wsUrl = useMemo(() => {
+    const base = import.meta.env.VITE_WS_URL || "ws://localhost:8000";
+    return `${base.replace(/\/$/, "")}/ws/dms/`;
+  }, []);
+  const allowMock = import.meta.env.VITE_USE_MOCK_WS === "true";
 
   useEffect(() => {
     setDevices(INIT_DEVICES);
@@ -300,7 +300,23 @@ export default function Dashboard() {
     }
   }, [applyWsPacket, addNotification, notificationsEnabled]);
 
-  useMockWs(handlePacket, true);
+  const wsStatus = useWebSocket(wsUrl, {
+    onMessage: (data) => {
+      if (data && typeof data === "object") handlePacket(data as WsPacket);
+    },
+    enabled: true,
+  }).status;
+
+  useEffect(() => {
+    if (!allowMock || wsStatus === "connected") {
+      setMockFallback(false);
+      return;
+    }
+    const timer = setTimeout(() => setMockFallback(true), 4000);
+    return () => clearTimeout(timer);
+  }, [allowMock, wsStatus]);
+
+  useMockWs(handlePacket, allowMock && mockFallback);
 
   const dismissAlert = useCallback(() => setAlertQueue((q) => q.slice(1)), []);
 
@@ -320,6 +336,14 @@ export default function Dashboard() {
     return filter === "alert" ? base.filter((d) => (d.live?.alarm_level ?? 0) > 0) : base;
   }, [devices, filter]);
 
+  const streamLabel = allowMock && mockFallback
+    ? t("ws.mock")
+    : wsStatus === "connected"
+      ? t("ws.connected")
+      : wsStatus === "connecting"
+        ? t("ws.reconnecting")
+        : t("ws.disconnected");
+
   return (
     <>
       <AlertModal packet={alertQueue[0] ?? null} onDismiss={dismissAlert} />
@@ -327,7 +351,7 @@ export default function Dashboard() {
       <div className="h-full flex flex-col overflow-hidden">
 
         {/* KPI Row */}
-        <KpiRow counts={counts} total={devices.length} />
+        <KpiRow counts={counts} total={devices.length} streamLabel={streamLabel} />
 
         {/* Critical Banner */}
         <CriticalBanner count={counts[3]} names={dangerNames} />

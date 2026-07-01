@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -9,6 +9,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { api } from "@/lib/api";
 import { ALARM_COLOR } from "@/lib/utils";
 import { useFleetStore } from "@/store/fleet";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { useMockWs } from "@/hooks/useMockWs";
 import type { AlertEvent, AlarmLevel, WsPacket } from "@/types";
 
@@ -72,6 +73,12 @@ export default function Reports() {
   const [newIds, setNewIds] = useState<Set<number>>(new Set());
   const [activePie, setActivePie] = useState(0);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
+  const [mockFallback, setMockFallback] = useState(false);
+  const wsUrl = useMemo(() => {
+    const base = import.meta.env.VITE_WS_URL || "ws://localhost:8000";
+    return `${base.replace(/\/$/, "")}/ws/dms/`;
+  }, []);
+  const allowMock = import.meta.env.VITE_USE_MOCK_WS === "true";
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -106,7 +113,23 @@ export default function Reports() {
     });
   }, []);
 
-  useMockWs(handlePacket);
+  const wsStatus = useWebSocket(wsUrl, {
+    onMessage: (data) => {
+      if (data && typeof data === "object") handlePacket(data as WsPacket);
+    },
+    enabled: true,
+  }).status;
+
+  useEffect(() => {
+    if (!allowMock || wsStatus === "connected") {
+      setMockFallback(false);
+      return;
+    }
+    const timer = setTimeout(() => setMockFallback(true), 4000);
+    return () => clearTimeout(timer);
+  }, [allowMock, wsStatus]);
+
+  useMockWs(handlePacket, allowMock && mockFallback);
 
   /* ── Stats ──────────────────────────────────────────────── */
   const alertsToday = todayEvents.filter((e) => e.alarm_level > 0).length;

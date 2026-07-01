@@ -19,6 +19,7 @@ docker-compose up --build -d
 ```
 
 > Build ~2 daqiqa oladi. Kutib turing.
+> `DEBUG=True` bo'lsa backend avtomatik `--reload` bilan qayta yuklanadi.
 
 ### 2. Migration va seed data (faqat birinchi marta)
 
@@ -27,7 +28,7 @@ docker-compose up --build -d
 docker-compose run --rm backend python manage.py makemigrations accounts dms
 docker-compose run --rm backend python manage.py migrate
 
-# 9 ta mock haydovchi + dispatcher user yaratish
+# Mock data ni tozalab, 2 ta real qurilma yaratish
 docker-compose run --rm backend python manage.py seed_data
 ```
 
@@ -39,7 +40,7 @@ npm install
 npm run dev
 ```
 
-### 4. Jetson simulyator — venv (ixtiyoriy)
+### 4. Jetson live sender — venv (ixtiyoriy)
 
 Real WebSocket data uchun (backend WS ga ulanadi va DB ga saqlaydi):
 
@@ -49,7 +50,7 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements-mock.txt
 
 # Har safar ishga tushirish uchun
-.venv\Scripts\python jetson_mock.py
+.venv\Scripts\python jetson.py
 ```
 
 ---
@@ -64,8 +65,8 @@ docker-compose up -d
 cd frontend
 npm run dev
 
-# 3. Simulyator (yangi terminal, ixtiyoriy)
-.venv\Scripts\python jetson_mock.py
+# 3. Jetson sender (yangi terminal, ixtiyoriy)
+.venv\Scripts\python jetson.py
 ```
 
 ---
@@ -85,7 +86,7 @@ npm run dev
 
 | Foydalanuvchi | Parol | Roli |
 |---------------|-------|------|
-| `dispatcher` | `Admin1234!` | business (9 ta qurilma) |
+| `dispatcher` | `Admin1234!` | business (2 ta qurilma) |
 | `admin` | `Admin1234!` | superuser (admin panel) |
 
 ---

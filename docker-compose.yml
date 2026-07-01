@@ -35,7 +35,11 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             daphne -b 0.0.0.0 -p 8000 config.asgi:application"
+             if [ \"$$DEBUG\" = \"True\" ] || [ \"$$DEBUG\" = \"1\" ]; then
+               uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload;
+             else
+               daphne -b 0.0.0.0 -p 8000 config.asgi:application;
+             fi"
 
   frontend:
     build:

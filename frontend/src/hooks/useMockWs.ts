@@ -1,6 +1,6 @@
 /**
- * Mock WebSocket data generator — used when backend is not running.
- * Simulates 9 devices sending packets at random intervals.
+ * Mock WebSocket data generator - used only as a fallback in local dev.
+ * Simulates the 2 real devices when backend is unavailable.
  */
 import { useEffect, useRef } from "react";
 import type { WsPacket } from "@/types";
@@ -8,13 +8,6 @@ import type { WsPacket } from "@/types";
 const DEVICES = [
   { device_id: "DGT-001", driver_name: "Shamshod Toshqobilov", lat: 41.2995, lon: 69.2401 },
   { device_id: "DGT-002", driver_name: "Bobur Rahimov",         lat: 41.3113, lon: 69.2797 },
-  { device_id: "DGT-003", driver_name: "Jasur Yusupov",         lat: 41.5522, lon: 69.1341 },
-  { device_id: "DGT-004", driver_name: "Dilshod Nazarov",       lat: 40.9983, lon: 69.3342 },
-  { device_id: "DGT-005", driver_name: "Sanjar Karimov",        lat: 41.0211, lon: 71.4736 },
-  { device_id: "DGT-006", driver_name: "Ulugbek Mirzayev",      lat: 40.3696, lon: 71.7975 },
-  { device_id: "DGT-007", driver_name: "Behruz Xasanov",        lat: 39.6547, lon: 66.9758 },
-  { device_id: "DGT-008", driver_name: "Timur Ergashev",        lat: 41.4023, lon: 69.5102 },
-  { device_id: "DGT-009", driver_name: "Nodir Abdullayev",      lat: 40.7891, lon: 72.3441 },
 ];
 
 const ALARM_MSGS: Record<number, string[]> = {
