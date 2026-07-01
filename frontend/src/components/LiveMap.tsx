@@ -83,7 +83,7 @@ const DGT002_FALLBACK_LAT = 41.309847;
 const DGT002_FALLBACK_LON = 69.2686852;
 
 export function LiveMap({ devices }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isDark } = useThemeStore();
 
   const devicesWithFallback = useMemo(() =>
@@ -131,11 +131,11 @@ export function LiveMap({ devices }: Props) {
 
         return (
           <Marker
-            key={device.device_id}
+            key={`${device.device_id}-${level}`}
             position={[device.live!.gps_lat!, device.live!.gps_lon!]}
             icon={icon}
           >
-            <Popup closeButton={false}>
+            <Popup key={i18n.language} closeButton={false}>
               <div className="min-w-[145px] space-y-1 text-[13px] text-text-primary">
                 <p className="font-display font-semibold leading-tight">
                   {device.driver_name}
