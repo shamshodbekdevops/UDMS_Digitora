@@ -244,17 +244,17 @@ html.light .leaflet-popup-tip {
 }
 .leaflet-popup-close-button { color: #8A8FB5 !important; }
 
-/* Radar marker */
+/* Radar marker — tezlik CSS custom property orqali boshqariladi */
 .radar-marker { position: relative; display: flex; align-items: center; justify-content: center; }
 .radar-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   border: 2px solid currentColor;
-  animation: radar-ping 1.8s ease-out infinite;
+  animation: radar-ping var(--ping-dur, 1.8s) ease-out infinite;
 }
 .radar-ring-2 {
-  animation-delay: 0.7s;
+  animation-delay: var(--ping-delay, 0.7s);
 }
 
 /* ═══════════════════════════════════════════════════════════

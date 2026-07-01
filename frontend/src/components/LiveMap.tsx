@@ -14,6 +14,7 @@ const PING_DUR: Record<number, string> = { 0: "3.5s", 1: "2.0s", 2: "1.0s", 3: "
 
 function createRadarIcon(level: AlarmLevel, color: string) {
   const pingDur = PING_DUR[level] ?? "1.8s";
+  const pingDelay = `${(parseFloat(pingDur) * 0.55).toFixed(3)}s`;
   const coreSize = level === 3 ? 12 : level >= 1 ? 10 : 8;
   const glow = level >= 2
     ? `0 0 10px ${color}, 0 0 20px ${color}60`
@@ -27,20 +28,9 @@ function createRadarIcon(level: AlarmLevel, color: string) {
     iconAnchor: [18, 18],
     popupAnchor:[0, -18],
     html: `
-      <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
-        <div style="
-          position:absolute;inset:0;border-radius:50%;
-          border:2px solid ${color};
-          animation:radar-ping ${pingDur} ease-out infinite;
-          opacity:0.9;
-        "></div>
-        <div style="
-          position:absolute;inset:0;border-radius:50%;
-          border:2px solid ${color};
-          animation:radar-ping ${pingDur} ease-out infinite;
-          animation-delay:${parseFloat(pingDur) * 0.55}s;
-          opacity:0.6;
-        "></div>
+      <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;--ping-dur:${pingDur};--ping-delay:${pingDelay}">
+        <div class="radar-ring" style="color:${color};opacity:0.9"></div>
+        <div class="radar-ring radar-ring-2" style="color:${color};opacity:0.6"></div>
         <div style="
           width:${coreSize}px;height:${coreSize}px;
           border-radius:50%;
