@@ -235,11 +235,11 @@ CANVAS_H        = 680
 #
 # Oddiy qirpish (0.1-0.4s) va tabiiy qarashlar bu taymerlarga
 # ta'sir qilmaydi, chunki ular eng qisqa chegaradan ham qisqa.
-DISTRACT_WARN_SEC  = 3.0   # Level 1: Chalg'ish (yon/telefon)
-EYES_WARN_SEC      = 5.0   # Level 2: Ko'z yumiq — mikro-uyqu
-EYES_DANGER_SEC     = 9.0   # Level 3: Ko'z yumiq — mutlaq uyqu
-HEAD_WARN_SEC       = 5.0   # Level 2: Bosh pastga — mikro-uyqu
-HEAD_DANGER_SEC     = 9.0   # Level 3: Bosh pastga — mutlaq uyqu
+DISTRACT_WARN_SEC  = 2.0   # Level 1: Chalg'ish (yon/telefon)
+EYES_WARN_SEC      = 3.0   # Level 2: Ko'z yumiq — mikro-uyqu
+EYES_DANGER_SEC     = 7.0   # Level 3: Ko'z yumiq — mutlaq uyqu
+HEAD_WARN_SEC       = 3.0   # Level 2: Bosh pastga — mikro-uyqu
+HEAD_DANGER_SEC     = 7.0   # Level 3: Bosh pastga — mutlaq uyqu
 FACE_GONE_DANGER_SEC = 3.0  # Level 3: Yuz kamerada yo'q (pastga ketgan)
 
 
