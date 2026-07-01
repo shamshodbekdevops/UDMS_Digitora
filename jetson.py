@@ -108,10 +108,10 @@ class WsSender:
 #  hamma narsa avvalgidek ishlayveradi (fault-tolerant)
 # ══════════════════════════════════════════════════════════════════
 FRAME_UPLOAD_URL  = f"http://{WS_HOST}:{WS_PORT}/api/video-frame/{DEVICE_ID}/upload/"
-FRAME_INTERVAL    = 0.25    # har 250ms da 1 kadr (4 fps)
-FRAME_WIDTH       = 320     # kichikroq = tezroq yuklash
-FRAME_HEIGHT      = 240
-FRAME_QUALITY     = 55      # JPEG sifati (0-100)
+FRAME_INTERVAL    = 0.1    # har 100ms da 1 kadr (10 fps)
+FRAME_WIDTH       = 640     # kichikroq = tezroq yuklash
+FRAME_HEIGHT      = 480
+FRAME_QUALITY     = 80     # JPEG sifati (0-100)
 
 try:
     import requests as _req_lib
