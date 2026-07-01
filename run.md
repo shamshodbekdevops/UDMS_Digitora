@@ -20,6 +20,8 @@ docker-compose up --build -d
 
 > Build ~2 daqiqa oladi. Kutib turing.
 > `DEBUG=True` bo'lsa backend avtomatik `--reload` bilan qayta yuklanadi.
+> Frontend kod o'zgarishi ham darhol serverda ko'rinishi uchun dev override bilan ishga tushiring:
+> `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build frontend`
 
 ### 2. Migration va seed data (faqat birinchi marta)
 
@@ -38,6 +40,12 @@ docker-compose run --rm backend python manage.py seed_data
 cd frontend
 npm install
 npm run dev
+```
+
+Serverdagi public frontendni hot-reload rejimida yuritish:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build frontend
 ```
 
 ### 4. Jetson live sender — venv (ixtiyoriy)
