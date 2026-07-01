@@ -38,6 +38,28 @@ function useCountUp(target: number, duration = 400): number {
   return value;
 }
 
+/* ── Live last-seen ticker (re-renders every 1s, color by staleness) ── */
+function LiveTimestamp({ lastSeen }: { lastSeen: string }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / 1000));
+  const color =
+    seconds < 30  ? "var(--text-muted)" :
+    seconds < 120 ? "var(--caution)"    :
+                    "var(--danger)";
+  return (
+    <span
+      className="ml-auto tabular-nums font-mono text-[11px] transition-colors"
+      style={{ color }}
+    >
+      {formatRelativeTime(lastSeen)}
+    </span>
+  );
+}
+
 interface Props {
   device: Device;
   onClick?: () => void;
@@ -103,9 +125,7 @@ export function DriverCard({ device, onClick }: Props) {
           )}
 
           {live?.last_seen && (
-            <span className="ml-auto text-text-muted tabular-nums">
-              {formatRelativeTime(live.last_seen)}
-            </span>
+            <LiveTimestamp lastSeen={live.last_seen} />
           )}
         </div>
 

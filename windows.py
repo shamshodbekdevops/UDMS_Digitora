@@ -16,7 +16,7 @@ Ishlatish:
 # ── Sozlanadigan konstantalar (deploy oldidan o'zgartiring) ─────────────────
 DEVICE_ID  = "DGT-001"   # Backend DB dagi ro'yxatdan o'tgan qurilma ID si
 VIDEO_PORT = 8080         # WebRTC signaling server porti (har Jetson uchun boshqacha)
-WS_HOST    = "192.168.1.104"  # Django backend host
+WS_HOST    = "45.130.164.189"  # Django backend host
 WS_PORT    = 8000         # Django backend port
 # ─────────────────────────────────────────────────────────────────────────────
 

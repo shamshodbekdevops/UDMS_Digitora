@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, Edit2, Trash2, Wifi, WifiOff } from "lucide-react";
 import { api } from "@/lib/api";

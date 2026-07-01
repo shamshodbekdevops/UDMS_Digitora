@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback, useRef, useContext } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, Sector,
 } from "recharts";
 import { Users, Bell, Eye, TrendingUp } from "lucide-react";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { api } from "@/lib/api";
 import { ALARM_COLOR } from "@/lib/utils";
 import { useFleetStore } from "@/store/fleet";
@@ -182,6 +183,14 @@ export default function Reports() {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
                 onClick={(d) => setSelectedDriver(d?.activePayload?.[0]?.payload?.id ?? null)}>
+                <defs>
+                  {barData.map((entry, i) => (
+                    <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor={entry.fill} stopOpacity={0.92} />
+                      <stop offset="95%" stopColor={entry.fill} stopOpacity={0.42} />
+                    </linearGradient>
+                  ))}
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(138,148,255,0.1)" />
                 <XAxis dataKey="name" tick={{ fill: "#8A8FB5", fontSize: 10 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#8A8FB5", fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -190,8 +199,8 @@ export default function Reports() {
                   {barData.map((entry, i) => (
                     <Cell
                       key={i}
-                      fill={entry.fill}
-                      fillOpacity={selectedDriver && selectedDriver !== entry.id ? 0.35 : 0.85}
+                      fill={`url(#barGrad${i})`}
+                      fillOpacity={selectedDriver && selectedDriver !== entry.id ? 0.35 : 1}
                     />
                   ))}
                 </Bar>
@@ -228,7 +237,7 @@ export default function Reports() {
                   activeShape={ActivePieShape}
                   onMouseEnter={(_, index) => setActivePie(index)}
                 >
-                  {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} />)}
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} stroke="transparent" />)}
                 </Pie>
                 <Legend
                   iconType="circle" iconSize={8}
@@ -290,6 +299,7 @@ export default function Reports() {
           </div>
         )}
       </div>
+      <ScrollToTop />
     </div>
   );
 }

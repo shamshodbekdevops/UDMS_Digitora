@@ -7,6 +7,7 @@ import DriverDetail from "@/pages/DriverDetail";
 import History from "@/pages/History";
 import Reports from "@/pages/Reports";
 import Drivers from "@/pages/Drivers";
+import Settings from "@/pages/Settings";
 import DashboardLayout from "@/layouts/DashboardLayout";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: "reports", element: <Reports /> },
       { path: "drivers", element: <Drivers /> },
       { path: "drivers/:deviceId", element: <DriverDetail /> },
+      { path: "settings", element: <Settings /> },
     ],
   },
 ]);

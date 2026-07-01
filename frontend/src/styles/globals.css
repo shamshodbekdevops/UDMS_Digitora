@@ -313,6 +313,12 @@ html.light .leaflet-popup-tip {
   50%, 100% { opacity: 0; }
 }
 
+/* Alert modal waveform bars */
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.25); opacity: 0.55; }
+  50%       { transform: scaleY(1.0);  opacity: 1; }
+}
+
 /* ═══════════════════════════════════════════════════════════
    SCROLLBAR
    ═══════════════════════════════════════════════════════════ */

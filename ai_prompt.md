@@ -1,109 +1,163 @@
-# DIGITORA DMS — Prompt 3: Settings & Notifications
+# DIGITORA DMS — Prompt 4: UI/UX Effects & Final Polish
 
-This is an ADDITION to the existing project. Extend 2 existing
-features. Use the same design system — do not introduce new patterns.
+This is the FINAL enhancement pass. The project is functionally
+complete. This prompt is purely about visual quality and UX polish —
+making the difference between "good" and "impressive enough to win".
 
----
-
-## FEATURE 1 — Notification toggle in Dashboard header
-
-In the dashboard header, the notification bell (🔔) icon currently
-has no toggle functionality.
-
-**Add the following:**
-
-### Bell icon behavior
-- Clicking the bell opens a notification panel (shadcn/ui `Sheet`
-  sliding in from the right, or an inline dropdown — your choice,
-  whichever fits the existing header layout better)
-- At the top of the panel: a toggle switch labeled
-  "Enable notifications" (on/off)
-- When OFF: bell icon gets a strikethrough slash overlay, no new
-  notification popups appear (suppress all Level 2/3 alert modals
-  and audio), persisted in `localStorage`
-- When ON (default): bell icon is normal, alerts function as usual
-
-### Notification panel content
-- List of the last 20 notifications (pulled from `AlertEvent` via
-  `GET /api/alert-events/?limit=20`)
-- Each item: colored alarm badge, driver name, message, relative
-  time ("3 minutes ago" — use a simple relative time formatter)
-- Unread items have a subtle left border in the alarm level color
-- "Mark all as read" button at the top
-- Unread count badge on the bell icon (red dot with number, max "9+")
-
-### Real-time: new WebSocket Level 2/3 events
-- Append to the notification list automatically (no page refresh)
-- Increment the unread count badge
-- If notifications are ON: show the existing Level 3 modal AND play
-  the audio signal
+Go through EVERY page and component and apply the changes below.
+Do not skip any section.
 
 ---
 
-## FEATURE 2 — Settings page (full content)
+## ENHANCEMENT 1 — Audit and fix ALL remaining visual inconsistencies
 
-The Settings page (`/settings`) currently exists but is mostly empty
-or has placeholder content. Fill it with real, useful content divided
-into these sections (use a left tab/nav + right content layout within
-the page):
+Before adding new effects, do a consistency audit:
+- Every card/panel must use the same border-radius (check that new
+  pages added in Prompt 2/3 match the original dashboard)
+- Every modal/dialog must have the glassmorphism treatment
+  (`backdrop-filter: blur(20px)`, semi-transparent background)
+- Every button must have the `scale(0.97)` press micro-interaction
+- Every interactive card must have the `translateY(-2px)` hover lift
+- Font usage must be consistent: Space Grotesk for headings, Inter
+  for body, JetBrains Mono for all numbers/IDs/coordinates
 
-### Tab 1 — Profile
-- Display name (editable text field)
-- Email (read-only, from JWT/auth)
-- Phone number (editable)
-- Language preference (dropdown: Uzbek / English / Korean — connects
-  to the existing i18n system, changing this should immediately switch
-  the UI language)
-- Save button → `PATCH /api/users/me/`
-
-### Tab 2 — Account & Role
-- Current role displayed prominently (large badge: "Free" or
-  "Business" or "Admin")
-- For Free users: an upgrade CTA card — "Upgrade to Business"
-  with listed features and a "$49/month" price tag (UI only, no
-  real payment — button shows "Contact sales" or a mailto link)
-- For Business users: company name (editable), number of active
-  devices (read-only, from `GET /api/devices/count/`)
-- Account status: "Active" green badge
-
-### Tab 3 — Billing (Business role only, hidden for Free/Admin)
-- Current plan: "Business — $49/month"
-- Next billing date: hardcoded or from a mock field (e.g.
-  "August 1, 2026")
-- Number of devices: current count vs plan limit (e.g. "3 / 10
-  devices") shown as a progress bar using `--accent` color
-- Usage this month: a simple bar showing "X alert events logged"
-  vs a monthly cap
-- Invoice history: a small table with 3-4 mock rows
-  (Date, Amount, Status: "Paid" green badge, Download PDF link
-  that shows a toast "PDF generation coming soon")
-- Cancel plan button (red, opens a confirmation modal)
-
-### Tab 4 — Notifications (settings, not the panel)
-- Toggle: "Email alerts for Level 3 events" (on/off, saved via API)
-- Toggle: "Browser push notifications" (on/off — request permission
-  via `Notification.requestPermission()` if turned on)
-- Toggle: "Sound alerts" (on/off, saved to localStorage)
-- Alarm sensitivity: a slider or select for "Notify me at Level:"
-  (1 / 2 / 3) — saves to localStorage
-
-### Tab 5 — Devices
-- List of all devices owned by the current user
-  (`GET /api/devices/`)
-- Each row: Device ID, status dot (online/offline), last seen
-  timestamp, assigned driver name
-- "Add device" button → opens a simple modal with Device ID +
-  friendly name fields
-
-**Visual for Settings:**
-- Left tab nav uses the same sidebar style (glassmorphism, active
-  state with accent color, Framer Motion layout animation on active
-  indicator)
-- Content area is a glassmorphism card
-- All form inputs match the existing design system
-- Section headings use `--text-muted`, slightly smaller than body
+Fix any inconsistencies found before proceeding.
 
 ---
 
-After completing both features, show me the result. Do NOT proceed to
-Prompt 4 yet.
+## ENHANCEMENT 2 — Page transition animations
+
+Currently, navigating between pages (sidebar links) is instant.
+Add smooth page transitions using Framer Motion:
+- Outgoing page: `opacity: 1 → 0`, `y: 0 → -8px`, 180ms ease-in
+- Incoming page: `opacity: 0 → 1`, `y: 12px → 0`, 220ms ease-out
+- Wrap the router outlet with a Framer Motion `AnimatePresence` +
+  `motion.div` with these variants
+- The transition should feel snappy, not slow — keep total duration
+  under 400ms combined
+
+---
+
+## ENHANCEMENT 3 — Enhanced Galaxy background (night mode only)
+
+The current Galaxy background has nebula gradients. Enhance it:
+
+### Shooting stars
+Add occasional shooting star animations — a thin bright line that
+streaks across the background, fades in fast and out slow, at random
+positions and angles. Frequency: 1 every 8-15 seconds (random
+interval). Implement as a CSS `@keyframes` animation on a pseudo-element
+or a small Canvas overlay. Max 1-2 shooting stars visible at once.
+
+### Depth layers
+Add a subtle `vignette` effect — a radial gradient overlay, dark at
+the edges, transparent in the center, `pointer-events: none`, on top
+of the star layer but below the UI. This adds visual depth and makes
+the center content area feel more focused.
+
+### Star density variation
+Currently stars are likely uniform. Make them slightly denser toward
+the bottom-right and sparser top-left — just adjust the distribution
+logic slightly. This creates a more natural, asymmetric galaxy feel.
+
+---
+
+## ENHANCEMENT 4 — Alert modal improvements
+
+The Level 3 alert modal needs two additions:
+
+### Waveform animation while alert is active
+While the Level 3 modal is open, show an animated audio waveform
+visual below the alert message (even if no audio is playing — it's
+purely decorative, reinforcing "ALARM" status). Simple implementation:
+5-7 vertical bars, each animating `scaleY` between 0.3 and 1.0 with
+different `animation-delay` values, colored in `--danger`.
+
+### Auto-dismiss countdown
+Add a subtle countdown indicator: if the dispatcher doesn't
+acknowledge within 30 seconds, the modal pulses once more (the
+entrance animation replays) to re-grab attention. Do NOT auto-close
+the modal — just re-pulse it. Show a thin progress ring around the
+"Acknowledge" button counting down the 30 seconds (resets if the
+dispatcher hovers over the button, indicating they're looking at it).
+
+---
+
+## ENHANCEMENT 5 — Dashboard page micro-details
+
+### Live indicator in header
+Next to the "DIGITORA" logo, add a small animated "LIVE" badge:
+a red dot (using `--danger` color) with a continuous, very subtle
+pulse animation, followed by the text "LIVE". This communicates to
+the dispatcher that the dashboard is actively receiving data.
+When the WebSocket is disconnected, the dot turns gray and text
+changes to "OFFLINE".
+
+### Driver card — last seen timestamp
+On each driver card in the dashboard list, add a small "Last seen:
+X seconds ago" line below the driver name, updating every second
+(use a `setInterval` that re-renders just this text — not the whole
+card). Color it `--text-muted` when recent (< 30s), `--caution` when
+stale (30s-2min), `--danger` when very stale (> 2min, suggesting
+connection loss).
+
+### Map — fit bounds on load
+When the map loads, if there are multiple device markers, automatically
+fit the map bounds to show all markers (Leaflet `map.fitBounds()`).
+When a new marker appears (new device connects), smoothly pan to
+include it.
+
+---
+
+## ENHANCEMENT 6 — Reports page chart polish
+
+The Recharts charts added in Prompt 2 need visual polish:
+
+- Chart background: transparent (no white box — the glassmorphism
+  card provides the background)
+- All axis text: `--text-muted` color, 11px, Inter font
+- Grid lines: `--border` color, dashed, very subtle (opacity 0.4)
+- Bar chart: add `radius={[4, 4, 0, 0]}` on bars (rounded top corners)
+- Bar chart: add a subtle gradient fill (top: full color, bottom:
+  60% opacity) — use Recharts `linearGradient` defs
+- Pie chart: add `stroke="transparent"` to remove white gaps between
+  slices
+- All chart tooltips: glassmorphism style (already specified in
+  Prompt 2, confirm it's actually applied consistently)
+- Add a chart loading skeleton (shimmer, same style as other
+  skeletons) that shows while data is fetching
+
+---
+
+## ENHANCEMENT 7 — Accessibility and UX quality-of-life
+
+These don't affect visual design but improve UX score:
+
+- All icon-only buttons must have `aria-label` and a shadcn/ui
+  `Tooltip` that appears on hover (150ms delay)
+- Keyboard navigation: pressing `Escape` closes any open modal,
+  popover, or notification panel
+- When a Level 3 alert arrives and notifications are ON, briefly
+  change the browser tab title to "⚠️ ALERT — DIGITORA DMS" and
+  restore it after 5 seconds (or when acknowledged)
+- Add a "Jump to top" button that appears after scrolling 300px on
+  long pages (History, Reports) — subtle, bottom-right corner,
+  glassmorphism style
+
+---
+
+## FINAL CHECK
+
+After all enhancements are applied:
+1. Run the app and navigate through EVERY page
+2. Toggle between dark and light mode — confirm smooth transition
+   on all pages including the new ones
+3. Confirm the Galaxy background shooting stars appear in dark mode
+4. Trigger a mock Level 3 alert (via mock WebSocket or direct state
+   manipulation) and confirm: modal animates correctly, waveform
+   shows, countdown ring works, bell badge increments, tab title
+   changes
+5. Check that NO orange/carrot accent color remains anywhere
+   (use browser DevTools color picker if needed)
+
+Report what you find and fix anything that fails.

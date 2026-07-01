@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { MapPin, Clock, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNotificationStore } from "@/store/notifications";
 import type { WsPacket } from "@/types";
 
-// Web Audio API orqali alert beep (browser Audio API, ixtiyoriy — prompt 7-bosqich)
 function playAlertBeep() {
   try {
     const ctx = new AudioContext();
@@ -22,43 +22,163 @@ function playAlertBeep() {
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + dur + 0.05);
     };
-    beep(880, 0,    0.15);
+    beep(880, 0, 0.15);
     beep(660, 0.18, 0.15);
     beep(880, 0.36, 0.25);
-  } catch (_) {/* blocked by browser policy — silently ignore */}
+  } catch {
+    /* browser policy blocked — silent */
+  }
 }
 
+/* ── Waveform animation ────────────────────────────────────────── */
+function Waveform() {
+  const config = [
+    { h: 0.55, d: 0 },    { h: 0.85, d: 0.08 },
+    { h: 1.0,  d: 0.16 }, { h: 0.7,  d: 0.04 },
+    { h: 0.9,  d: 0.12 }, { h: 0.6,  d: 0.2  },
+    { h: 0.75, d: 0.06 },
+  ];
+  return (
+    <div
+      className="flex items-end justify-center gap-[3px] mt-3"
+      style={{ height: 22 }}
+      aria-hidden
+    >
+      {config.map(({ h, d }, i) => (
+        <div
+          key={i}
+          style={{
+            width: 3,
+            height: `${h * 100}%`,
+            background: "var(--danger)",
+            borderRadius: 2,
+            transformOrigin: "bottom",
+            animation: `waveform ${0.52 + i * 0.04}s ease-in-out ${d}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── 30-second countdown progress bar ─────────────────────────── */
+function CountdownBar({
+  active,
+  onComplete,
+}: {
+  active: boolean;
+  onComplete: () => void;
+}) {
+  const [width, setWidth] = useState(100);
+  const hoveredRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    if (!active) { setWidth(100); return; }
+
+    const DURATION = 30_000;
+    const TICK = 120;
+    let elapsed = 0;
+
+    const id = setInterval(() => {
+      if (hoveredRef.current) {
+        elapsed = 0;
+        setWidth(100);
+        return;
+      }
+      elapsed += TICK;
+      const t = Math.min(elapsed / DURATION, 1);
+      setWidth((1 - t) * 100);
+      if (t >= 1) {
+        elapsed = 0;
+        setWidth(100);
+        onCompleteRef.current();
+      }
+    }, TICK);
+
+    return () => clearInterval(id);
+  }, [active]);
+
+  return (
+    <div
+      className="mt-4 h-[3px] w-full overflow-hidden rounded-full"
+      style={{ background: "rgba(255,71,87,0.15)" }}
+      onMouseEnter={() => { hoveredRef.current = true; }}
+      onMouseLeave={() => { hoveredRef.current = false; }}
+    >
+      <div
+        className="h-full rounded-full"
+        style={{
+          width: `${width}%`,
+          background: "var(--danger)",
+          boxShadow: "0 0 8px rgba(255,71,87,0.6)",
+          transition: "width 0.12s linear",
+        }}
+      />
+    </div>
+  );
+}
+
+/* ── Main component ────────────────────────────────────────────── */
 interface Props {
   packet: WsPacket | null;
   onDismiss: () => void;
 }
 
 const overlayVariants = {
-  hidden: { opacity: 0 },
+  hidden:  { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.2 } },
-  exit:   { opacity: 0, transition: { duration: 0.15 } },
+  exit:    { opacity: 0, transition: { duration: 0.15 } },
 };
-
 const cardVariants = {
   hidden:  { scale: 0.85, opacity: 0, y: 20 },
   visible: {
     scale: 1, opacity: 1, y: 0,
-    transition: { type: "spring" as const, damping: 16, stiffness: 280, duration: 0.3 },
+    transition: { type: "spring" as const, damping: 16, stiffness: 280 },
   },
   exit: { scale: 0.92, opacity: 0, y: -10, transition: { duration: 0.18 } },
 };
 
 export function AlertModal({ packet, onDismiss }: Props) {
   const { t, i18n } = useTranslation();
+  const soundAlerts = useNotificationStore((s) => s.soundAlerts);
+  const shakeControls = useAnimation();
 
-  // Beep chalganda + keyboard Esc bilan yopish
+  const handleRepulse = useCallback(() => {
+    void shakeControls.start({
+      x: [0, -7, 7, -4, 4, 0],
+      scale: [1, 1.025, 1.025, 1.01, 1],
+      transition: { duration: 0.45 },
+    });
+  }, [shakeControls]);
+
   useEffect(() => {
-    if (!packet) return;
-    playAlertBeep();
+    if (!packet) {
+      // Reset tab title when modal closes
+      document.title = "DIGITORA DMS";
+      return;
+    }
+
+    // Beep
+    if (soundAlerts) playAlertBeep();
+
+    // Tab title
+    document.title = "⚠️ ALERT — DIGITORA DMS";
+    const titleTimer = setTimeout(() => {
+      if (document.title.includes("ALERT")) document.title = "DIGITORA DMS";
+    }, 5000);
+
+    // ESC key
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onDismiss(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [packet, onDismiss]);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      clearTimeout(titleTimer);
+      document.title = "DIGITORA DMS";
+    };
+  }, [packet, onDismiss, soundAlerts]);
 
   const time = packet ? new Date(packet.timestamp).toLocaleTimeString(i18n.language) : "";
 
@@ -66,7 +186,7 @@ export function AlertModal({ packet, onDismiss }: Props) {
     <AnimatePresence>
       {packet && (
         <>
-          {/* Overlay — backdrop blur (7-effekt) */}
+          {/* Backdrop */}
           <motion.div
             key="overlay"
             variants={overlayVariants}
@@ -78,7 +198,7 @@ export function AlertModal({ packet, onDismiss }: Props) {
             onClick={onDismiss}
           />
 
-          {/* Modal card */}
+          {/* Modal wrapper (handles enter/exit animation) */}
           <motion.div
             key="modal"
             variants={cardVariants}
@@ -87,39 +207,54 @@ export function AlertModal({ packet, onDismiss }: Props) {
             exit="exit"
             className="fixed inset-0 z-[9001] flex items-center justify-center p-4 pointer-events-none"
           >
-            <div
+            {/* Inner card — separate motion.div for re-pulse shake */}
+            <motion.div
+              animate={shakeControls}
               className="w-full max-w-lg pointer-events-auto rounded-2xl border overflow-hidden"
               style={{
-                background: "rgba(20,22,38,0.92)",
+                background: "rgba(20,22,38,0.93)",
                 backdropFilter: "blur(24px)",
                 borderColor: "rgba(255,71,87,0.5)",
-                boxShadow: "0 0 60px rgba(255,71,87,0.25), 0 20px 60px rgba(0,0,0,0.6)",
+                boxShadow:
+                  "0 0 60px rgba(255,71,87,0.25), 0 20px 60px rgba(0,0,0,0.6)",
               }}
             >
-              {/* Top danger strip */}
+              {/* Top danger shimmer strip */}
               <div
                 className="h-1.5 w-full"
-                style={{ background: "linear-gradient(90deg, #FF4757, #FF8A3D, #FF4757)", backgroundSize: "200%", animation: "shimmer 1.5s linear infinite" }}
+                style={{
+                  background: "linear-gradient(90deg,#FF4757,#FF8A3D,#FF4757)",
+                  backgroundSize: "200%",
+                  animation: "shimmer 1.5s linear infinite",
+                }}
               />
 
               <div className="p-6 md:p-7">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    {/* Pulsing danger icon */}
                     <div className="relative w-12 h-12 flex items-center justify-center">
                       <div className="absolute inset-0 rounded-full bg-danger/20 animate-pulse" />
-                      <div className="absolute inset-0 rounded-full border-2 border-danger" style={{ animation: "risk-ring 0.6s ease-out infinite" }} />
+                      <div
+                        className="absolute inset-0 rounded-full border-2 border-danger"
+                        style={{ animation: "risk-ring 0.6s ease-out infinite" }}
+                      />
                       <AlertTriangle size={24} className="text-danger relative z-10" />
                     </div>
                     <div>
                       <p className="font-display font-bold text-danger text-xl leading-tight">
                         {t("alert_modal.title")}
                       </p>
-                      <p className="text-sm text-text-muted mt-0.5">{t("alert_modal.subtitle")}</p>
+                      <p className="text-sm text-text-muted mt-0.5">
+                        {t("alert_modal.subtitle")}
+                      </p>
                     </div>
                   </div>
-                  <button onClick={onDismiss} className="text-text-muted hover:text-text-primary transition-colors mt-1">
+                  <button
+                    onClick={onDismiss}
+                    className="text-text-muted hover:text-text-primary transition-colors mt-1"
+                    aria-label={t("common.close")}
+                  >
                     <X size={20} />
                   </button>
                 </div>
@@ -129,53 +264,69 @@ export function AlertModal({ packet, onDismiss }: Props) {
                   className="rounded-xl p-4 mb-4 border border-danger/20"
                   style={{ background: "rgba(255,71,87,0.08)" }}
                 >
-                  <p className="font-display font-bold text-text-primary text-lg">{packet.driver_name}</p>
-                  <p className="text-sm text-text-muted font-mono mt-0.5">{packet.device_id}</p>
+                  <p className="font-display font-bold text-text-primary text-lg">
+                    {packet.driver_name}
+                  </p>
+                  <p className="text-sm text-text-muted font-mono mt-0.5">
+                    {packet.device_id}
+                  </p>
                   <p className="text-base text-danger font-medium mt-2">
                     {packet.alarm_msg}
                   </p>
-                  <div className="mt-2 flex items-center gap-1 text-sm text-text-muted">
+                  <div className="flex items-center gap-1 text-sm text-text-muted mt-1">
                     <span className="font-mono font-bold text-warning text-[14px]">
                       {t("device.perclos")} {(packet.perclos * 100).toFixed(0)}%
                     </span>
                     {packet.gps?.speed != null && (
-                      <span className="ml-2">{packet.gps.speed.toFixed(0)} {t("common.km_h")}</span>
+                      <span className="ml-2">
+                        {packet.gps.speed.toFixed(0)} {t("common.km_h")}
+                      </span>
                     )}
                   </div>
+
+                  {/* Audio waveform visual */}
+                  <Waveform />
                 </div>
 
-                {/* Meta info */}
+                {/* Meta grid */}
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   {packet.gps && (
                     <div className="flex items-start gap-2 text-xs text-text-muted">
                       <MapPin size={13} className="shrink-0 mt-0.5 text-accent" />
                       <div>
-                        <p className="text-[11px] uppercase tracking-wider mb-0.5">{t("alert_modal.location")}</p>
-                          <p className="font-mono text-text-primary text-[14px]">
+                        <p className="text-[11px] uppercase tracking-wider mb-0.5">
+                          {t("alert_modal.location")}
+                        </p>
+                        <p className="font-mono text-text-primary text-[14px]">
                           {packet.gps.lat.toFixed(4)}, {packet.gps.lon.toFixed(4)}
                         </p>
                       </div>
                     </div>
                   )}
                   <div className="flex items-start gap-2 text-xs text-text-muted">
-                      <Clock size={14} className="shrink-0 mt-0.5 text-accent" />
+                    <Clock size={14} className="shrink-0 mt-0.5 text-accent" />
                     <div>
-                        <p className="text-[11px] uppercase tracking-wider mb-0.5">{t("alert_modal.time")}</p>
-                        <p className="font-mono text-text-primary text-[14px]">{time}</p>
+                      <p className="text-[11px] uppercase tracking-wider mb-0.5">
+                        {t("alert_modal.time")}
+                      </p>
+                      <p className="font-mono text-text-primary text-[14px]">{time}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Confirm button */}
+                {/* Acknowledge button */}
                 <Button
                   onClick={onDismiss}
-                    className="w-full bg-danger hover:bg-danger/90 text-white font-semibold py-3 text-base btn-press rounded-2xl"
+                  className="w-full text-white font-semibold py-3 text-base btn-press rounded-2xl"
                   style={{ background: "#FF4757" }}
                 >
                   {t("alert_modal.confirm_btn")}
                 </Button>
+
+                {/* 30s countdown bar — hover to reset */}
+                <CountdownBar active={!!packet} onComplete={handleRepulse} />
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </>
       )}

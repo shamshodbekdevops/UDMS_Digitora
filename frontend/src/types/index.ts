@@ -6,6 +6,9 @@ export interface User {
   email: string;
   role: "free" | "business" | "admin";
   company_name?: string;
+  phone?: string;
+  email_alerts_level3?: boolean;
+  browser_push_notifications?: boolean;
 }
 
 export interface LiveStatus {

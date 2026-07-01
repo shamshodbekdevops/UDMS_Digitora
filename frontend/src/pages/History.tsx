@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, ChevronRight, Filter, X } from "lucide-react";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { api } from "@/lib/api";
 import { ALARM_COLOR, formatRelativeTime } from "@/lib/utils";
 import type { AlertEvent, AlarmLevel, Device } from "@/types";
@@ -202,6 +203,7 @@ export default function History() {
           </button>
         </div>
       )}
+      <ScrollToTop />
     </div>
   );
 }
