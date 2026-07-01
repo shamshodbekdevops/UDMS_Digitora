@@ -35,7 +35,7 @@ except ImportError as exc:
 
 DEVICE_ID = os.getenv("DIGITORA_DEVICE_ID", "DGT-002")
 DRIVER_NAME = os.getenv("DIGITORA_DRIVER_NAME", "Bobur Rahimov")
-WS_URL = os.getenv("DIGITORA_WS_URL", "ws://localhost:8000/ws/dms/")
+WS_URL = os.getenv("DIGITORA_WS_URL", "ws://45.130.164.189/ws/dms/")
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "face_landmarker.task")
 MODEL_URL = (

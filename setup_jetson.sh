@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
 
-APP_DIR="${1:-/home/jetson/digitora}"
-SERVICE_NAME="digitora-jetson"
+APP_DIR="${1:-/home/jetson/Desktop/DMS/sinov1}"
+SERVICE_NAME="${SERVICE_NAME:-digitora-dms}"
 
 echo "[1/4] Installing Python packages"
 python3 -m pip install --upgrade pip
 python3 -m pip install mediapipe websockets opencv-python numpy
 
 echo "[2/4] Copying service file"
+mkdir -p "${APP_DIR}"
 cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=DIGITORA Jetson Live Sender
