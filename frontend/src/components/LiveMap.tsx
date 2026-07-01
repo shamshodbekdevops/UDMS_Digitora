@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import type { Device } from "@/types";
@@ -6,11 +7,19 @@ import { ALARM_COLOR } from "@/lib/utils";
 import type { AlarmLevel } from "@/types";
 import { useThemeStore } from "@/store/theme";
 
-// Radar ping DivIcon — xuddi radar ekranidagi kabi (4-effekt)
+// Ping tezligi darajaga qarab:
+// 0 (yashil) = juda sekin (3.5s), 1 (sariq) = sekin (2.0s),
+// 2 (to'q sariq) = o'rtacha (1.0s), 3 (qizil) = tez (0.45s)
+const PING_DUR: Record<number, string> = { 0: "3.5s", 1: "2.0s", 2: "1.0s", 3: "0.45s" };
+
 function createRadarIcon(level: AlarmLevel, color: string) {
-  const pingDur = level === 3 ? "0.7s" : level === 2 ? "1.0s" : "1.8s";
+  const pingDur = PING_DUR[level] ?? "1.8s";
   const coreSize = level === 3 ? 12 : level >= 1 ? 10 : 8;
-  const glow = level >= 2 ? `0 0 10px ${color}, 0 0 20px ${color}60` : `0 0 6px ${color}80`;
+  const glow = level >= 2
+    ? `0 0 10px ${color}, 0 0 20px ${color}60`
+    : level === 1
+      ? `0 0 8px ${color}90`
+      : `0 0 5px ${color}60`;
 
   return L.divIcon({
     className: "",
@@ -19,14 +28,12 @@ function createRadarIcon(level: AlarmLevel, color: string) {
     popupAnchor:[0, -18],
     html: `
       <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
-        <!-- Radar halqa 1 -->
         <div style="
           position:absolute;inset:0;border-radius:50%;
           border:2px solid ${color};
           animation:radar-ping ${pingDur} ease-out infinite;
           opacity:0.9;
         "></div>
-        <!-- Radar halqa 2 (ketma-ket kechikish) -->
         <div style="
           position:absolute;inset:0;border-radius:50%;
           border:2px solid ${color};
@@ -34,7 +41,6 @@ function createRadarIcon(level: AlarmLevel, color: string) {
           animation-delay:${parseFloat(pingDur) * 0.55}s;
           opacity:0.6;
         "></div>
-        <!-- Markaziy nuqta -->
         <div style="
           width:${coreSize}px;height:${coreSize}px;
           border-radius:50%;
@@ -48,7 +54,6 @@ function createRadarIcon(level: AlarmLevel, color: string) {
   });
 }
 
-// Xarita dastlabki marta ochilganda barcha markerlarga sig'diradi
 function MapFit({ devices }: { devices: Device[] }) {
   const map = useMap();
   const done = useRef(false);
@@ -78,6 +83,7 @@ const DGT002_FALLBACK_LAT = 41.309847;
 const DGT002_FALLBACK_LON = 69.2686852;
 
 export function LiveMap({ devices }: Props) {
+  const { t } = useTranslation();
   const { isDark } = useThemeStore();
 
   const devicesWithFallback = useMemo(() =>
@@ -143,12 +149,12 @@ export function LiveMap({ devices }: Props) {
                     style={{ backgroundColor: color, boxShadow: `0 0 0 4px ${color}18` }}
                   />
                   <p className="text-[12px] font-semibold" style={{ color }}>
-                    {["Xavfsiz", "Ehtiyot", "Ogohlantirish", "XAVF!"][level]}
+                    {t(`alarm.level${level}`)}
                   </p>
                 </div>
                 {device.live?.gps_speed != null && (
                   <p className="text-[11px] text-text-muted">
-                    {device.live.gps_speed.toFixed(0)} km/h
+                    {device.live.gps_speed.toFixed(0)} {t("common.km_h")}
                   </p>
                 )}
                 {device.live?.perclos != null && (
