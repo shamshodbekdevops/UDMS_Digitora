@@ -28,9 +28,11 @@ import os
 import sys
 import subprocess
 import urllib.request
+import urllib.error
 import glob as _glob
 import json
 import asyncio
+import base64
 from collections import deque
 from datetime import datetime, timezone
 
@@ -46,7 +48,7 @@ DRIVER_ID = "SHAMSHOD"
 # ══════════════════════════════════════════════════════════════════
 #  SERVER SOZLAMALARI
 # ══════════════════════════════════════════════════════════════════
-DEVICE_ID        = os.getenv("DIGITORA_DEVICE_ID",   "Qora_pantera")
+DEVICE_ID        = os.getenv("DIGITORA_DEVICE_ID",   "DGT-002")
 WS_HOST          = os.getenv("DIGITORA_WS_HOST",     "45.130.164.189")
 WS_PORT          = int(os.getenv("DIGITORA_WS_PORT", "8000"))
 WS_URL           = f"ws://{WS_HOST}:{WS_PORT}/ws/dms/"
@@ -98,6 +100,81 @@ class WsSender:
         if not _WS_OK:
             return
         self._loop.call_soon_threadsafe(self._queue.put_nowait, packet)
+
+# ══════════════════════════════════════════════════════════════════
+#  FRAME YUBORGICH — MJPEG orqali serverga video yuboradi
+#  Jetson → HTTP POST (JPEG) → Server → Dashboard
+#  requests kutubxonasi yo'q bo'lsa — video o'chiriladi, qolgan
+#  hamma narsa avvalgidek ishlayveradi (fault-tolerant)
+# ══════════════════════════════════════════════════════════════════
+FRAME_UPLOAD_URL  = f"http://{WS_HOST}:{WS_PORT}/api/video-frame/{DEVICE_ID}/upload/"
+FRAME_INTERVAL    = 0.25    # har 250ms da 1 kadr (4 fps)
+FRAME_WIDTH       = 320     # kichikroq = tezroq yuklash
+FRAME_HEIGHT      = 240
+FRAME_QUALITY     = 55      # JPEG sifati (0-100)
+
+try:
+    import requests as _req_lib
+    _REQ_OK = True
+except ImportError:
+    _req_lib = None
+    _REQ_OK  = False
+    print("  [!] requests yo'q — video o'chirilgan (pip3 install requests)")
+
+class FrameSender:
+    """
+    Kamera kadrlarini serverga HTTP POST orqali yuboradi.
+    Alohida background thread'da ishlaydi — asosiy loopni bloklam aydi.
+    requests yo'q bo'lsa yoki server ulanmasa — xatolik bermaydi,
+    faqat chiziqcha ('..') chiqaradi va davom etadi.
+    """
+    def __init__(self):
+        self._lock   = threading.Lock()
+        self._frame  = None
+        self._active = _REQ_OK
+        if _REQ_OK:
+            self._session = _req_lib.Session()
+            threading.Thread(
+                target=self._run, daemon=True, name="frame-sender"
+            ).start()
+            print(f"  [OK] FrameSender tayyor → {FRAME_UPLOAD_URL}")
+        else:
+            print("  [!] FrameSender o'chirilgan (requests yo'q)")
+
+    def update(self, frame: "np.ndarray"):
+        """Asosiy loopdan chaqiriladi — yangi kadrni bufferga qo'yadi."""
+        if not self._active:
+            return
+        small = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+        with self._lock:
+            self._frame = small
+
+    def _run(self):
+        last_send = 0.0
+        while True:
+            now = time.time()
+            if now - last_send < FRAME_INTERVAL:
+                time.sleep(0.02)
+                continue
+            with self._lock:
+                frm = self._frame.copy() if self._frame is not None else None
+            if frm is None:
+                time.sleep(0.05)
+                continue
+            try:
+                _, buf    = cv2.imencode(
+                    '.jpg', frm,
+                    [cv2.IMWRITE_JPEG_QUALITY, FRAME_QUALITY]
+                )
+                b64 = base64.b64encode(buf.tobytes()).decode('utf-8')
+                self._session.post(
+                    FRAME_UPLOAD_URL,
+                    json={"frame": b64, "device_id": DEVICE_ID},
+                    timeout=1.0
+                )
+                last_send = now
+            except Exception:
+                pass   # tarmoq xatolarini jim o'tkazib yuboramiz
 
 # ══════════════════════════════════════════════════════════════════
 #  MODEL FAYL
@@ -1043,8 +1120,9 @@ def main():
 
     ard    = Arduino()
     st     = State()
-    ws     = WsSender()        # ← SERVER ULANISH
-    last_ws_send = 0.0         # ← oxirgi yuborish vaqti
+    ws     = WsSender()
+    fs     = FrameSender()         # ← VIDEO YUBORISH
+    last_ws_send = 0.0
     canvas = np.zeros((CANVAS_H,CANVAS_W,3),dtype=np.uint8)
     cv2.namedWindow("Digitora DMS", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Digitora DMS", CANVAS_W, CANVAS_H)
@@ -1060,6 +1138,9 @@ def main():
 
         frame=cv2.flip(frame,1)
         ih,iw=frame.shape[:2]
+
+        # ── VIDEO KADRINI SERVERGA YUBORISH (FrameSender) ─────────
+        fs.update(frame)
 
         st.fps_cnt+=1
         if time.time()-st.fps_t>=1.0:

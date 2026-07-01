@@ -1,275 +1,311 @@
-# DIGITORA DMS — Production Deploy Prompt
+# DIGITORA DMS — Add Live Camera Feed (MJPEG Relay)
 
-## CONTEXT
+## What's already working
+- Jetson sends WebSocket packets (alarm_level, perclos, gps) ✅
+- Dashboard shows real-time data ✅
+- Jetson now also sends JPEG frames via HTTP POST to:
+  `POST http://45.130.164.189:8000/api/video-frame/DGT-002/upload/`
+  Body: `{ "frame": "<base64 JPEG>", "device_id": "DGT-002" }`
 
-The project is a full-stack DMS (Driver Monitoring System) dashboard:
-- Backend: Django + DRF + Channels + PostgreSQL + Redis (already running on VPS)
-- Frontend: React + Vite + TypeScript (currently only runs locally)
-- VPS IP: 45.130.164.189 (Kamatera, Singapore, Ubuntu 22.04)
-- Backend is accessible at: http://45.130.164.189:8000
-- Django admin works at: http://45.130.164.189:8000/admin/
+## What's missing
+- Backend has no `/api/video-frame/` endpoint yet ❌
+- Dashboard has no live camera component yet ❌
 
-The problem: Frontend only runs locally on the developer's laptop.
-Goal: Make the full app (frontend + backend) accessible at
-http://45.130.164.189 from ANY device on ANY network.
-
----
-
-## CURRENT PROJECT STRUCTURE
-
-```
-UDMS_Digitora/
-├── docker-compose.yml        ← currently has: db, redis, backend
-├── .env                      ← already on server
-├── backend/                  ← Django app
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── ...
-└── frontend/                 ← React + Vite (NOT yet in docker-compose)
-    ├── package.json
-    ├── vite.config.ts        ← has proxy to localhost:8000
-    ├── .env                  ← only has VITE_STREAM_BASE_URL=http://localhost:8080
-    └── src/
-```
-
-Current `vite.config.ts` proxy (dev only, not used in production build):
-```ts
-proxy: {
-  "/api": { target: "http://localhost:8000" },
-  "/ws":  { target: "ws://localhost:8000", ws: true }
-}
-```
+## Your job: add ONLY these two things. Do NOT touch anything else.
 
 ---
 
-## WHAT YOU NEED TO DO
+## PART 1 — Backend (Django)
 
-### STEP 1 — Create frontend environment files
-
-Create `frontend/.env.production` with:
+### Step 1: Add django-redis to requirements if not present
+In `requirements.txt`, make sure this line exists:
 ```
-VITE_API_URL=http://45.130.164.189:8000
-VITE_WS_URL=ws://45.130.164.189:8000
-VITE_STREAM_BASE_URL=http://45.130.164.189:8080
+django-redis
 ```
 
-Create `frontend/.env.development` (keep local dev working):
-```
-VITE_API_URL=http://localhost:8000
-VITE_WS_URL=ws://localhost:8000
-VITE_STREAM_BASE_URL=http://localhost:8080
-```
-
-### STEP 2 — Fix API/WebSocket URLs in frontend code
-
-Search ALL frontend source files (`src/`) for hardcoded:
-- `localhost:8000`
-- `ws://localhost`
-- `http://localhost`
-
-Replace ALL of them with the environment variables:
-- `import.meta.env.VITE_API_URL` for HTTP API calls
-- `import.meta.env.VITE_WS_URL` for WebSocket connections
-- `import.meta.env.VITE_STREAM_BASE_URL` for WebRTC video stream
-
-Do NOT miss any hardcoded URLs — check every file in `src/`.
-
-### STEP 3 — Create Nginx config for frontend serving
-
-Create `nginx/nginx.conf`:
-```nginx
-events {
-    worker_connections 1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    server {
-        listen 80;
-        server_name 45.130.164.189;
-        root /usr/share/nginx/html;
-        index index.html;
-
-        # React SPA — all routes go to index.html
-        location / {
-            try_files $uri $uri/ /index.html;
-        }
-
-        # Proxy API requests to Django backend
-        location /api/ {
-            proxy_pass http://backend:8000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-
-        # Proxy WebSocket to Django Channels
-        location /ws/ {
-            proxy_pass http://backend:8000;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_read_timeout 86400;
-        }
-
-        # Static files caching
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
-            expires 1y;
-            add_header Cache-Control "public, immutable";
+### Step 2: Make sure Redis cache is configured in settings
+In `backend/config/settings.py` (or wherever settings are), confirm
+or add:
+```python
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
 ```
 
-### STEP 4 — Create frontend Dockerfile
+### Step 3: Create the video frame views
+Create a new file `apps/dms/views_video.py`:
 
-Create `frontend/Dockerfile`:
-```dockerfile
-# Stage 1: Build
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY ../nginx/nginx.conf /etc/nginx/nginx.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-### STEP 5 — Update docker-compose.yml
-
-Add `frontend` and `nginx` services to the existing `docker-compose.yml`.
-Keep ALL existing services (db, redis, backend) UNCHANGED.
-Only ADD these new services:
-
-```yaml
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: digitora-frontend
-    restart: unless-stopped
-    depends_on:
-      - backend
-
-  nginx:
-    image: nginx:alpine
-    container_name: digitora-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - frontend
-      - backend
-```
-
-Also update the `backend` service to remove the direct port exposure
-(since Nginx will proxy to it, we don't want port 8000 exposed directly
-to the internet — only Nginx's port 80 should be public).
-Change in backend service:
-```yaml
-# Remove or comment out:
-# ports:
-#   - "8000:8000"
-# Keep it accessible within Docker network only (no ports: needed)
-```
-
-IMPORTANT: Port 8000 should still work for direct access during
-transition — so keep `ports: ["8000:8000"]` for now, remove later.
-
-### STEP 6 — Update ALLOWED_HOSTS in .env
-
-The `.env` file on the server currently has:
-```
-ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,45.130.164.189
-```
-
-This is correct. But also check `backend/config/settings.py` or
-wherever `ALLOWED_HOSTS` is defined — make sure it reads from the
-environment variable, not hardcoded.
-
-### STEP 7 — Add CORS settings for production
-
-In Django settings, ensure `CORS_ALLOWED_ORIGINS` includes the
-server IP. If using `django-cors-headers`, add:
 ```python
-CORS_ALLOWED_ORIGINS = [
-    "http://45.130.164.189",
-    "http://45.130.164.189:8000",
-    "http://localhost:5173",  # keep for local dev
-    "http://localhost:3000",
-]
+import base64
+import time
+from django.core.cache import cache
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+
+@api_view(['POST', 'OPTIONS'])
+@permission_classes([AllowAny])
+def upload_frame(request, device_id):
+    """Jetson POSTs JPEG frame here every 250ms."""
+    if request.method == 'OPTIONS':
+        response = Response()
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+    frame_b64 = request.data.get('frame')
+    if not frame_b64:
+        return Response({'error': 'No frame'}, status=400)
+
+    cache.set(f'vframe:{device_id}', frame_b64, timeout=5)
+    cache.set(f'vframe_ts:{device_id}', time.time(), timeout=5)
+    return Response({'ok': True})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_frame(request, device_id):
+    """Dashboard polls this every 200ms to get the latest frame."""
+    frame_b64 = cache.get(f'vframe:{device_id}')
+    ts = cache.get(f'vframe_ts:{device_id}')
+
+    if not frame_b64:
+        return Response({'frame': None, 'online': False})
+
+    age = time.time() - (ts or 0)
+    return Response({
+        'frame': frame_b64,
+        'online': age < 3.0,
+        'age_ms': int(age * 1000),
+    })
 ```
 
-Or use `CORS_ALLOW_ALL_ORIGINS = True` for hackathon (simpler).
+### Step 4: Register the URL routes
+Find the main DMS urls file (`apps/dms/urls.py` or similar).
+Add these two routes:
 
-### STEP 8 — Git push and server deploy commands
+```python
+from .views_video import upload_frame, get_frame
 
-After making ALL the above changes, do the following:
+# Add to urlpatterns:
+path('video-frame/<str:device_id>/upload/', upload_frame),
+path('video-frame/<str:device_id>/', get_frame),
+```
 
-**On the developer's laptop:**
+Make sure the prefix matches — the full URLs should be:
+- `POST /api/video-frame/DGT-002/upload/`
+- `GET  /api/video-frame/DGT-002/`
+
+### Step 5: Add CORS headers for video endpoints
+In Django settings, add the video-frame URLs to CORS allowed list,
+or simply confirm `CORS_ALLOW_ALL_ORIGINS = True` is set
+(acceptable for hackathon).
+
+---
+
+## PART 2 — Frontend (React)
+
+### Step 1: Create LiveCameraFeed component
+Create `frontend/src/components/LiveCameraFeed.tsx`:
+
+```tsx
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+interface Props {
+  deviceId: string;
+  alarmLevel?: number;
+  className?: string;
+}
+
+export function LiveCameraFeed({ deviceId, alarmLevel = 0, className }: Props) {
+  const [frame, setFrame]   = useState<string | null>(null);
+  const [online, setOnline] = useState(false);
+  const timerRef            = useRef<ReturnType<typeof setInterval>>();
+  const failCount           = useRef(0);
+
+  const API = import.meta.env.VITE_API_URL ?? 'http://45.130.164.189:8000';
+
+  const fetchFrame = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/api/video-frame/${deviceId}/`, {
+        signal: AbortSignal.timeout(800),
+      });
+      const data = await res.json();
+      if (data.frame) {
+        setFrame(data.frame);
+        setOnline(data.online ?? true);
+        failCount.current = 0;
+      } else {
+        setOnline(false);
+      }
+    } catch {
+      failCount.current += 1;
+      if (failCount.current > 3) setOnline(false);
+    }
+  }, [API, deviceId]);
+
+  useEffect(() => {
+    fetchFrame();
+    timerRef.current = setInterval(fetchFrame, 250);
+    return () => clearInterval(timerRef.current);
+  }, [fetchFrame]);
+
+  const borderCol =
+    alarmLevel >= 3 ? 'var(--danger)'
+    : alarmLevel === 2 ? 'var(--warning)'
+    : alarmLevel === 1 ? 'var(--caution)'
+    : 'var(--border)';
+
+  return (
+    <div
+      className={className}
+      style={{
+        position: 'relative',
+        borderRadius: 12,
+        overflow: 'hidden',
+        border: `2px solid ${borderCol}`,
+        background: 'var(--surface)',
+        aspectRatio: '4/3',
+        transition: 'border-color 0.3s',
+      }}
+    >
+      {frame ? (
+        <img
+          src={`data:image/jpeg;base64,${frame}`}
+          alt="Jonli kamera"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          decoding="async"
+        />
+      ) : (
+        <div style={{
+          width: '100%', height: '100%',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 8, color: 'var(--text-muted)',
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="1.5">
+            <path d="M23 7l-7 5 7 5V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            <line x1="1" y1="1" x2="23" y2="23"
+              stroke="var(--danger)" strokeWidth="1.5"/>
+          </svg>
+          <span style={{ fontSize: 13 }}>Kamera oflayn</span>
+        </div>
+      )}
+
+      {/* LIVE / OFFLINE badge */}
+      <div style={{
+        position: 'absolute', top: 8, right: 8,
+        padding: '2px 8px', borderRadius: 20,
+        fontSize: 11, fontWeight: 700,
+        background: online
+          ? 'rgba(61,220,132,0.15)'
+          : 'rgba(255,71,87,0.15)',
+        color: online ? 'var(--safe)' : 'var(--danger)',
+        border: `1px solid ${online ? 'var(--safe)' : 'var(--danger)'}`,
+        backdropFilter: 'blur(8px)',
+        letterSpacing: '0.5px',
+      }}>
+        {online ? '● LIVE' : '○ OFFLINE'}
+      </div>
+
+      {/* Red banner when alarm level 3 */}
+      {alarmLevel >= 3 && online && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '6px 12px',
+          background: 'rgba(255,71,87,0.85)',
+          backdropFilter: 'blur(4px)',
+          color: '#fff', fontSize: 12, fontWeight: 700,
+          textAlign: 'center', letterSpacing: '0.5px',
+        }}>
+          ⚠ XAVF ANIQLANDI
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Step 2: Add to Driver Detail page
+In the Driver Detail page (`/drivers/:id` or similar), import and add:
+
+```tsx
+import { LiveCameraFeed } from '@/components/LiveCameraFeed';
+
+// Place this at the top of the driver detail content,
+// above or beside the PERCLOS chart:
+<LiveCameraFeed
+  deviceId={device.device_id}
+  alarmLevel={device.alarm_level ?? 0}
+/>
+```
+
+### Step 3: Add small thumbnail to Dashboard driver cards
+In the driver card component in the main dashboard, add a small
+thumbnail version (optional but impressive for demo):
+
+```tsx
+<LiveCameraFeed
+  deviceId={device.device_id}
+  alarmLevel={device.alarm_level ?? 0}
+  className="driver-card-camera"
+/>
+```
+
+Add to CSS / Tailwind:
+```css
+.driver-card-camera {
+  width: 100%;
+  max-height: 140px;
+  margin-bottom: 8px;
+}
+```
+
+---
+
+## PART 3 — Deploy
+
+After making ALL changes above:
+
 ```bash
+# On laptop:
 git add .
-git commit -m "feat: production deploy setup - nginx, docker, env"
+git commit -m "feat: live camera MJPEG relay via server"
 git push origin main
-```
 
-**Then provide the exact commands to run on the server
-(via SSH at 45.130.164.189):**
-```bash
+# On server (SSH):
 cd /root/UDMS_Digitora
 git pull origin main
-docker compose down
 docker compose up -d --build
 ```
 
-**Verify everything works:**
+Check it works:
 ```bash
-docker compose ps
-docker compose logs nginx --tail=20
-docker compose logs frontend --tail=20
-docker compose logs backend --tail=20
+# Should return {"frame": null, "online": false} when Jetson is off:
+curl http://45.130.164.189:8000/api/video-frame/DGT-002/
+
+# Should return {"frame": "<base64>", "online": true} when Jetson is running:
+# Start jetson.py, wait 2 seconds, then curl again
 ```
 
-### STEP 9 — Final verification
-
-After deploy, these URLs should work:
-- `http://45.130.164.189` → React dashboard (main app)
-- `http://45.130.164.189/api/` → Django REST API
-- `ws://45.130.164.189/ws/dms/` → WebSocket (for Jetson + dashboard)
-- `http://45.130.164.189:8000/admin/` → Django admin (keep working)
-
 ---
 
-## IMPORTANT NOTES
+## IMPORTANT RULES
 
-1. Do NOT break the existing backend — it's already running on the
-   server and receiving WebSocket data from the Python DMS script.
-
-2. The `windows.py` and `jetson.py` scripts connect to:
-   `WS_HOST = "45.130.164.189"` on port `8000`
-   This should keep working (don't remove port 8000 from backend).
-
-3. After this deploy, ANY device (phone, tablet, laptop) connected
-   to ANY network (WiFi, 4G, hotspot) can open:
-   `http://45.130.164.189`
-   and see the full real-time dashboard.
-
-4. For the hackathon demo: the judges can open the dashboard on their
-   own phones/laptops by simply visiting `http://45.130.164.189`
-   — no local network, no special setup required.
-
----
-
-Start with Step 1 and proceed through all steps in order.
-After completing each step, confirm before moving to the next.
+1. Do NOT modify any existing views, models, or components
+2. Do NOT change WebSocket logic
+3. Do NOT change any existing URL routes — only ADD new ones
+4. The video feed failing must never crash the dashboard —
+   it should just show "Kamera oflayn" gracefully
+5. Complete Part 1 first and confirm the API works with curl,
+   then do Part 2
