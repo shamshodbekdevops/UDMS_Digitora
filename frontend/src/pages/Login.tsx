@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff, Loader2, User, Lock, Car, Shield, Wifi } from "lucide-react";
+import { Eye, EyeOff, Loader2, User, Lock, Shield, Wifi } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import type { User as UserType, AuthTokens } from "@/types";
 
@@ -36,33 +36,6 @@ function ShootingStars() {
         />
       ))}
     </>
-  );
-}
-
-/* ──────────────────────────────────────────
-   Hero stat chip
-────────────────────────────────────────── */
-function HeroStat({
-  icon, value, label, delay,
-}: { icon: React.ReactNode; value: string; label: string; delay: string }) {
-  return (
-    <div
-      className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl"
-      style={{
-        background: "rgba(255,255,255,0.1)",
-        border: "1px solid rgba(255,255,255,0.18)",
-        backdropFilter: "blur(10px)",
-        animation: `chip-appear 0.5s ease-out ${delay} both`,
-      }}
-    >
-      <span style={{ color: "rgba(255,255,255,0.8)" }}>{icon}</span>
-      <div>
-        <p className="font-display font-black text-white text-lg leading-none">{value}</p>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", letterSpacing: "0.04em", marginTop: 1 }}>
-          {label}
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -178,81 +151,112 @@ export default function Login() {
     <div className="page-shell min-h-screen flex flex-col lg:flex-row text-text-primary">
 
       {/* ══════════════ LEFT HERO (lg+) ══════════════ */}
-      <div className="hidden lg:flex lg:w-[56%] relative flex-col items-center justify-center overflow-hidden">
+      <div className="hidden lg:flex lg:w-[56%] relative flex-col overflow-hidden">
 
-        {/* Dark mode overlay — semi-transparent so CosmicBg shows through */}
-        <div
-          className="cosmic-dark absolute inset-0"
-          style={{ background: "linear-gradient(155deg, rgba(10,6,28,0.62) 0%, rgba(5,18,44,0.56) 100%)" }}
-        />
-        {/* Light mode overlay — solid deep blue */}
-        <div
-          className="cosmic-light absolute inset-0"
-          style={{ background: "linear-gradient(145deg, #06245C 0%, #0B3DAD 40%, #1254C5 70%, #1869D4 100%)" }}
-        />
+        {/* Dark overlay */}
+        <div className="cosmic-dark absolute inset-0"
+          style={{ background: "linear-gradient(155deg, rgba(8,4,22,0.72) 0%, rgba(4,14,38,0.60) 100%)" }} />
+        {/* Light overlay */}
+        <div className="cosmic-light absolute inset-0"
+          style={{ background: "linear-gradient(145deg, #06245C 0%, #0B3DAD 40%, #1254C5 70%, #1869D4 100%)" }} />
 
-        {/* Dark mode decorations: shooting stars + nebula accents */}
+        {/* Shooting stars + nebula accents */}
         <div className="cosmic-dark absolute inset-0 overflow-hidden pointer-events-none">
           <ShootingStars />
           <div style={{
-            position: "absolute", bottom: "10%", left: "5%",
-            width: 300, height: 300, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(80,60,180,0.22) 0%, transparent 65%)",
+            position: "absolute", bottom: "8%", left: "4%",
+            width: 320, height: 320, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(80,60,180,0.2) 0%, transparent 65%)",
           }} />
           <div style={{
-            position: "absolute", top: "15%", right: "8%",
-            width: 220, height: 220, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(45,27,105,0.28) 0%, transparent 65%)",
+            position: "absolute", top: "12%", right: "6%",
+            width: 240, height: 240, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(45,27,105,0.25) 0%, transparent 65%)",
           }} />
         </div>
 
-        {/* Light mode decorations: orbs + grid */}
         <div className="cosmic-light absolute inset-0 pointer-events-none">
           <LightModeOrbs />
         </div>
 
-        {/* Hero content */}
-        <div className="relative z-10 px-10 py-12 w-full max-w-lg">
-          {/* Logo + brand */}
-          <div className="flex items-center gap-3 mb-10">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1))", border: "1px solid rgba(255,255,255,0.28)" }}
-            >
-              <img src="/rasm.png" alt="UDMS" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {/* Hero content — 3 zone: top / center / bottom */}
+        <div className="relative z-10 flex flex-col justify-between h-full px-12 py-12">
+
+          {/* Zone 1: KOICA badge */}
+          <div className="flex items-center gap-2" style={{ animation: "card-rise 0.3s ease-out both" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.1em" }}>
+              KOICA ODA · Digitora · 2026
+            </span>
+          </div>
+
+          {/* Zone 2: Main visual content */}
+          <div>
+            {/* Glowing AI orb */}
+            <div className="relative mb-10" style={{ width: 76, height: 76 }}>
+              <div style={{
+                position: "absolute", inset: 0, borderRadius: "50%",
+                background: "radial-gradient(circle at 38% 32%, rgba(180,210,255,0.95) 0%, rgba(108,142,255,0.85) 40%, rgba(61,220,132,0.35) 80%, transparent 100%)",
+                boxShadow: "0 0 36px rgba(108,142,255,0.75), 0 0 72px rgba(108,142,255,0.3), 0 0 120px rgba(108,142,255,0.12)",
+                animation: "hero-glow 3.2s ease-in-out infinite",
+              }} />
+              <div style={{
+                position: "absolute", inset: -14, borderRadius: "50%",
+                border: "1px solid rgba(108,142,255,0.28)",
+                animation: "radar-ping 3.5s ease-out infinite",
+              }} />
+              <div style={{
+                position: "absolute", inset: -14, borderRadius: "50%",
+                border: "1px solid rgba(108,142,255,0.15)",
+                animation: "radar-ping 3.5s ease-out 1.75s infinite",
+              }} />
             </div>
-            <div>
-              <p className="font-display font-black text-white text-[22px] tracking-[0.16em] leading-none">
-                UDMS
-              </p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", letterSpacing: "0.06em", marginTop: 3 }}>
-                created by Digitora
-              </p>
+
+            {/* Headline */}
+            <h1 className="font-display font-black text-white leading-[1.08]" style={{ fontSize: 52 }}>
+              {t("auth.hero_line1")}
+            </h1>
+            <h1 className="font-display font-black leading-[1.08] mb-6" style={{
+              fontSize: 52,
+              background: "linear-gradient(110deg, #7DAAFF 0%, #3DDC84 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              {t("auth.hero_line2")}
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 15, lineHeight: 1.7, maxWidth: 380 }}>
+              {t("auth.hero_description")}
+            </p>
+
+            {/* Feature list */}
+            <div className="mt-10 space-y-3">
+              {[
+                { icon: <Eye size={15} />,    text: t("auth.feature_perclos") },
+                { icon: <Shield size={15} />, text: t("auth.feature_alert") },
+                { icon: <Wifi size={15} />,   text: t("auth.feature_realtime") },
+              ].map(({ icon, text }, i) => (
+                <div key={i} className="flex items-center gap-3"
+                  style={{ animation: `chip-appear 0.5s ease-out ${0.15 + i * 0.1}s both` }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "rgba(108,142,255,0.12)",
+                    border: "1px solid rgba(108,142,255,0.22)",
+                    color: "#8AAEFF",
+                  }}>
+                    {icon}
+                  </div>
+                  <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 14 }}>{text}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Main headline */}
-          <h1 className="font-display font-black text-white leading-tight mb-2" style={{ fontSize: 36 }}>
-            {t("auth.hero_line1")}
-          </h1>
-          <h1 className="font-display font-black leading-tight mb-2" style={{ fontSize: 36, color: "rgba(255,255,255,0.55)" }}>
-            {t("auth.hero_line2")}
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 15, marginTop: 10, marginBottom: 40, lineHeight: 1.6 }}>
-            {t("auth.hero_description")}
-          </p>
-
-          {/* Stats */}
-          <div className="flex flex-col gap-3">
-            <HeroStat icon={<Car size={18} />} value="9" label={t("auth.hero_stat_drivers")} delay="0.1s" />
-            <HeroStat icon={<Shield size={18} />} value="99.2%" label={t("auth.hero_stat_uptime")} delay="0.22s" />
-            <HeroStat icon={<Wifi size={18} />} value="15ms" label={t("auth.hero_stat_latency")} delay="0.34s" />
-          </div>
-
-          {/* Bottom badge */}
-          <div className="mt-10 flex items-center gap-2">
+          {/* Zone 3: Bottom live indicator */}
+          <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}>
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}>
               {t("auth.hero_live_badge")}
             </span>
           </div>
