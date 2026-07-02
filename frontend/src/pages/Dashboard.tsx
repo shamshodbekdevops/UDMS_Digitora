@@ -375,10 +375,10 @@ export default function Dashboard() {
       setReportText(report);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("authentication_error") || msg.includes("invalid x-api-key") || msg.includes("401")) {
-        setReportText("❌ AI xizmat sozlanmagan.\n\nServer administratori .env faylida ANTHROPIC_API_KEY ni to'ldirishni unutgan.\n\nConsole.anthropic.com dan API key olib, .env ga qo'shing va backendn restart qiling.");
+      if (msg.includes("API_KEY_INVALID") || msg.includes("401") || msg.includes("403")) {
+        setReportText("❌ Gemini API key noto'g'ri yoki muddati o'tgan.\n\naistudio.google.com dan yangi key olib, .env ga qo'shing va backend restart qiling.");
       } else if (msg.includes("503")) {
-        setReportText("❌ AI xizmat hali sozlanmagan.\n\nServer .env faylida ANTHROPIC_API_KEY mavjud emas.");
+        setReportText("❌ AI xizmat sozlanmagan.\n\nServer .env faylida GEMINI_API_KEY mavjud emas.");
       } else {
         setReportText(`❌ Hisobot yaratishda xatolik:\n\n${msg}`);
       }

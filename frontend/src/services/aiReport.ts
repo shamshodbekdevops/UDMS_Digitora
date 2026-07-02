@@ -66,13 +66,11 @@ Write a professional safety report with these sections:
 Keep it professional, concise, and actionable. Use emojis sparingly for section headers only.
 `.trim();
 
-  const result = await api.post<{ content: Array<{ type: string; text: string }> }>("/ai-report/", {
-    model: "claude-sonnet-4-6",
+  const result = await api.post<{ text: string }>("/ai-report/", {
+    prompt,
     max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
   });
 
-  const textBlock = result.content.find((b) => b.type === "text");
-  if (!textBlock) throw new Error("AI javob bo'sh keldi");
-  return textBlock.text;
+  if (!result.text) throw new Error("AI javob bo'sh keldi");
+  return result.text;
 }
