@@ -335,6 +335,22 @@ html.light .leaflet-popup-tip {
   50%, 100% { opacity: 0; }
 }
 
+/* AI report loading animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-35%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
 /* Alert modal waveform bars */
 @keyframes waveform {
   0%, 100% { transform: scaleY(0.25); opacity: 0.55; }

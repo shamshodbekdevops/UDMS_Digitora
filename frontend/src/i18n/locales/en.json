@@ -276,6 +276,13 @@
     "billing_next": "Next Billing",
     "paid": "Paid"
   },
+  "ai_report": {
+    "title": "AI Safety Report",
+    "button": "AI Report",
+    "analyzing": "Analyzing driver data...",
+    "download": "Download",
+    "close": "Close"
+  },
   "time": {
     "just_now": "Just now",
     "minute_ago": "1 minute ago",

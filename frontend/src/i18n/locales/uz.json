@@ -276,6 +276,13 @@
     "billing_next": "Keyingi to'lov sanasi",
     "paid": "To'langan"
   },
+  "ai_report": {
+    "title": "AI Xavfsizlik Hisoboti",
+    "button": "AI Hisobot",
+    "analyzing": "Ma'lumotlar tahlil qilinmoqda...",
+    "download": "Yuklab olish",
+    "close": "Yopish"
+  },
   "time": {
     "just_now": "Hozirgina",
     "minute_ago": "1 daqiqa oldin",

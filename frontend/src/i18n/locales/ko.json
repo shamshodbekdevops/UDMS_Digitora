@@ -276,6 +276,13 @@
     "billing_next": "다음 청구",
     "paid": "납부됨"
   },
+  "ai_report": {
+    "title": "AI 안전 보고서",
+    "button": "AI 보고서",
+    "analyzing": "데이터 분석 중...",
+    "download": "다운로드",
+    "close": "닫기"
+  },
   "time": {
     "just_now": "방금",
     "minute_ago": "1분 전",

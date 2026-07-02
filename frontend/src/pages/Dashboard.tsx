@@ -9,8 +9,10 @@ import { useMockWs } from "@/hooks/useMockWs";
 import { LiveMap } from "@/components/LiveMap";
 import { DriverCard } from "@/components/DriverCard";
 import { AlertModal } from "@/components/AlertModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { ALARM_COLOR } from "@/lib/utils";
+import { generateAIReport } from "@/services/aiReport";
 import type { Device, WsPacket } from "@/types";
 import {
   CheckCircle2, Activity, AlertTriangle,
@@ -238,7 +240,7 @@ function FilterBtn({ active, onClick, label, count, color }: {
    PAGE
 ══════════════════════════════════════════ */
 export default function Dashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { devices, setDevices, applyWsPacket } = useFleetStore();
   const notificationsEnabled = useNotificationStore((s) => s.notificationsEnabled);
@@ -246,6 +248,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "alert">("all");
   const [mockFallback, setMockFallback] = useState(false);
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportTimestamp, setReportTimestamp] = useState("");
 
   const [alertQueue, setAlertQueue] = useState<WsPacket[]>([]);
   const lastAlertTime = useRef<Record<string, number>>({});
@@ -320,9 +327,132 @@ export default function Dashboard() {
         ? t("ws.reconnecting")
         : t("ws.disconnected");
 
+  const handleGenerateReport = async () => {
+    setReportOpen(true);
+    setReportLoading(true);
+    setReportText("");
+    setReportTimestamp(new Date().toLocaleString());
+
+    try {
+      const res = await api.get<{ count: number; results: Array<{ alarm_level: number; perclos: number; timestamp: string; alarm_msg: string }> }>(
+        "/alert-events/?limit=50&ordering=-timestamp"
+      );
+      const results = res.results ?? [];
+
+      const firstEvent = results[results.length - 1];
+      let sessionDuration = "N/A";
+      if (firstEvent) {
+        const diffMin = Math.floor((Date.now() - new Date(firstEvent.timestamp).getTime()) / 60000);
+        sessionDuration = diffMin < 60 ? `${diffMin} daqiqa` : `${Math.floor(diffMin / 60)} soat`;
+      }
+
+      const avgPerclos = results.length
+        ? results.reduce((s, e) => s + (e.perclos ?? 0), 0) / results.length
+        : 0;
+
+      const report = await generateAIReport({
+        driverName: devices[0]?.driver_name ?? "Haydovchi",
+        deviceId: devices[0]?.device_id ?? "DGT-001",
+        totalAlerts: res.count ?? results.length,
+        dangerEvents: results.filter((e) => e.alarm_level === 3).length,
+        avgPerclos,
+        maxPerclos: results.length ? Math.max(...results.map((e) => e.perclos ?? 0)) : 0,
+        sessionDuration,
+        alarmBreakdown: {
+          level0: results.filter((e) => e.alarm_level === 0).length,
+          level1: results.filter((e) => e.alarm_level === 1).length,
+          level2: results.filter((e) => e.alarm_level === 2).length,
+          level3: results.filter((e) => e.alarm_level === 3).length,
+        },
+        recentEvents: results.slice(0, 10).map((e) => ({
+          timestamp: new Date(e.timestamp).toLocaleTimeString(),
+          level: e.alarm_level,
+          message: e.alarm_msg,
+        })),
+        language: (i18n.language as "uz" | "en" | "ko") ?? "uz",
+      });
+
+      setReportText(report);
+    } catch (err) {
+      setReportText(err instanceof Error ? err.message : "Hisobot yaratishda xatolik yuz berdi. Qayta urinib ko'ring.");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleDownloadReport = () => {
+    const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `digitora-report-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <AlertModal packet={alertQueue[0] ?? null} onDismiss={dismissAlert} />
+
+      {/* AI Report Modal */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-2xl" style={{ maxHeight: "80vh", overflowY: "auto" }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span>🤖</span>
+              <span>{t("ai_report.title")}</span>
+            </DialogTitle>
+            <DialogDescription>{reportTimestamp}</DialogDescription>
+          </DialogHeader>
+
+          {reportLoading ? (
+            <div className="flex flex-col items-center justify-center py-14 gap-4">
+              <div style={{ fontSize: 48, animation: "pulse 1.5s ease-in-out infinite" }}>🤖</div>
+              <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("ai_report.analyzing")}</p>
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 8, height: 8, borderRadius: "50%",
+                      background: "var(--accent)",
+                      animation: `bounce 1s ease-in-out ${i * 0.18}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                whiteSpace: "pre-wrap", lineHeight: 1.75, fontSize: 14,
+                color: "var(--text-primary)", padding: "4px 0 12px",
+              }}
+            >
+              {reportText}
+            </div>
+          )}
+
+          {!reportLoading && reportText && (
+            <div className="flex justify-end gap-2 pt-2 border-t border-border/50 mt-2">
+              <button
+                onClick={handleDownloadReport}
+                className="btn-press flex items-center gap-1.5 text-[12px] font-semibold px-4 py-2 rounded-lg"
+                style={{ background: "var(--surface-el)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+              >
+                📄 {t("ai_report.download")}
+              </button>
+              <button
+                onClick={() => setReportOpen(false)}
+                className="btn-press text-[12px] font-semibold px-4 py-2 rounded-lg"
+                style={{ background: "rgba(var(--accent-rgb),0.15)", border: "1px solid rgba(var(--accent-rgb),0.3)", color: "var(--accent)" }}
+              >
+                {t("ai_report.close")}
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="h-full flex flex-col overflow-hidden">
 
@@ -372,11 +502,26 @@ export default function Dashboard() {
           >
             {/* Panel header + filter */}
             <div className="shrink-0 px-3 pt-3 pb-2 border-b border-border/50 space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-sm text-text-primary">{t("dashboard.drivers")}</h2>
-                <span className="text-[11px] text-text-muted font-mono bg-surface-el px-2 py-0.5 rounded-full border border-border/50">
-                  {sorted.length} / {devices.length}
-                </span>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-display font-bold text-sm text-text-primary shrink-0">{t("dashboard.drivers")}</h2>
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    onClick={handleGenerateReport}
+                    disabled={reportLoading}
+                    className="btn-press flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
+                    style={{
+                      background: "rgba(var(--accent-rgb),0.12)",
+                      border: "1px solid rgba(var(--accent-rgb),0.28)",
+                      color: "var(--accent)",
+                      opacity: reportLoading ? 0.6 : 1,
+                    }}
+                  >
+                    🤖 {t("ai_report.button")}
+                  </button>
+                  <span className="text-[11px] text-text-muted font-mono bg-surface-el px-2 py-0.5 rounded-full border border-border/50 shrink-0">
+                    {sorted.length} / {devices.length}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-1.5">
                 <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}
