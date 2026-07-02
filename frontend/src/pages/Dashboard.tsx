@@ -375,12 +375,14 @@ export default function Dashboard() {
       setReportText(report);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("API_KEY_INVALID") || msg.includes("401") || msg.includes("403")) {
-        setReportText("❌ Gemini API key noto'g'ri yoki muddati o'tgan.\n\naistudio.google.com dan yangi key olib, .env ga qo'shing va backend restart qiling.");
-      } else if (msg.includes("503")) {
+      if (msg.includes("401") || msg.includes("403") || msg.includes("API_KEY_INVALID")) {
+        setReportText("❌ Gemini API key noto'g'ri.\n\naistudio.google.com dan yangi key olib, server .env ga qo'shing.");
+      } else if (msg.includes("503") || msg.includes("GEMINI_API_KEY")) {
         setReportText("❌ AI xizmat sozlanmagan.\n\nServer .env faylida GEMINI_API_KEY mavjud emas.");
+      } else if (msg.includes("quota") || msg.includes("429") || msg.includes("Quota")) {
+        setReportText("⏳ Gemini bepul limitga yetdi.\n\naistudio.google.com → Get API key → yangi loyiha → yangi key oling.\n\nYoki billing yoqing: console.cloud.google.com");
       } else {
-        setReportText(`❌ Hisobot yaratishda xatolik:\n\n${msg}`);
+        setReportText(`❌ Xatolik:\n\n${msg}`);
       }
     } finally {
       setReportLoading(false);
