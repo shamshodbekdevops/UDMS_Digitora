@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.accounts.views import MeView
 from apps.dms.views import AlertEventViewSet, DeviceCountView
 from apps.dms.views_video import upload_frame, get_frame
-from apps.dms.views_ai import ai_report_proxy
+from apps.dms.views_ai import ai_report_proxy, ai_list_models
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -18,4 +18,5 @@ urlpatterns = [
     path("api/video-frame/<str:device_id>/upload/", upload_frame, name="video-frame-upload"),
     path("api/video-frame/<str:device_id>/", get_frame, name="video-frame-get"),
     path("api/ai-report/", ai_report_proxy, name="ai-report"),
+    path("api/ai-models/", ai_list_models, name="ai-models"),
 ]
