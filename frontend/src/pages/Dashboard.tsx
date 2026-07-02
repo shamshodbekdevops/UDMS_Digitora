@@ -16,7 +16,7 @@ import { generateAIReport } from "@/services/aiReport";
 import type { Device, WsPacket } from "@/types";
 import {
   CheckCircle2, Activity, AlertTriangle,
-  TrendingUp, Cpu, Signal,
+  TrendingUp, Cpu, Signal, Sparkles,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────
@@ -406,7 +406,7 @@ export default function Dashboard() {
         <DialogContent className="max-w-2xl" style={{ maxHeight: "80vh", overflowY: "auto" }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <span>🤖</span>
+              <Sparkles size={18} style={{ color: "var(--accent)" }} />
               <span>{t("ai_report.title")}</span>
             </DialogTitle>
             <DialogDescription>{reportTimestamp}</DialogDescription>
@@ -414,7 +414,17 @@ export default function Dashboard() {
 
           {reportLoading ? (
             <div className="flex flex-col items-center justify-center py-14 gap-4">
-              <div style={{ fontSize: 48, animation: "pulse 1.5s ease-in-out infinite" }}>🤖</div>
+              <div
+                style={{
+                  width: 56, height: 56, borderRadius: "16px",
+                  background: "rgba(var(--accent-rgb),0.12)",
+                  border: "1.5px solid rgba(var(--accent-rgb),0.28)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  animation: "pulse 1.8s ease-in-out infinite",
+                }}
+              >
+                <Sparkles size={26} style={{ color: "var(--accent)" }} />
+              </div>
               <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("ai_report.analyzing")}</p>
               <div className="flex gap-1.5">
                 {[0, 1, 2].map((i) => (
@@ -523,7 +533,8 @@ export default function Dashboard() {
                       opacity: reportLoading ? 0.6 : 1,
                     }}
                   >
-                    🤖 {t("ai_report.button")}
+                    <Sparkles size={11} />
+                    {t("ai_report.button")}
                   </button>
                   <span className="text-[11px] text-text-muted font-mono bg-surface-el px-2 py-0.5 rounded-full border border-border/50 shrink-0">
                     {sorted.length} / {devices.length}
