@@ -374,7 +374,14 @@ export default function Dashboard() {
 
       setReportText(report);
     } catch (err) {
-      setReportText(err instanceof Error ? err.message : "Hisobot yaratishda xatolik yuz berdi. Qayta urinib ko'ring.");
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("authentication_error") || msg.includes("invalid x-api-key") || msg.includes("401")) {
+        setReportText("❌ AI xizmat sozlanmagan.\n\nServer administratori .env faylida ANTHROPIC_API_KEY ni to'ldirishni unutgan.\n\nConsole.anthropic.com dan API key olib, .env ga qo'shing va backendn restart qiling.");
+      } else if (msg.includes("503")) {
+        setReportText("❌ AI xizmat hali sozlanmagan.\n\nServer .env faylida ANTHROPIC_API_KEY mavjud emas.");
+      } else {
+        setReportText(`❌ Hisobot yaratishda xatolik:\n\n${msg}`);
+      }
     } finally {
       setReportLoading(false);
     }
