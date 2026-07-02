@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import type { Device, WsPacket, AlertEvent } from "@/types";
+import type { Device, WsPacket, AlertEvent, AlarmLevel, LiveStatus } from "@/types";
 
 interface FleetState {
   devices: Device[];
   activeAlerts: AlertEvent[];
   setDevices: (devices: Device[]) => void;
   applyWsPacket: (packet: WsPacket) => void;
+  patchDevice: (device_id: string, live: Partial<LiveStatus>) => void;
   addAlert: (alert: AlertEvent) => void;
   dismissAlert: (id: number) => void;
 }
@@ -31,6 +32,15 @@ export const useFleetStore = create<FleetState>((set) => ({
                 perclos: packet.perclos,
               },
             }
+          : d
+      ),
+    })),
+
+  patchDevice: (device_id, live) =>
+    set((state) => ({
+      devices: state.devices.map((d) =>
+        d.device_id === device_id && d.live
+          ? { ...d, live: { ...d.live, ...live } }
           : d
       ),
     })),

@@ -20,12 +20,32 @@ import {
 } from "lucide-react";
 
 /* ─────────────────────────────────────────
-   Initial devices
+   Initial devices (real placeholders)
 ───────────────────────────────────────── */
 const INIT_DEVICES: Device[] = [
   { id:1, device_id:"DGT-001", driver_name:"Shamshod Toshqobilov", vehicle_plate:"01A777AA", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.2995,gps_lon:69.2401,gps_speed:0,perclos:0}},
   { id:2, device_id:"DGT-002", driver_name:"Bobur Rahimov",        vehicle_plate:"30B456BB", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.3113,gps_lon:69.2797,gps_speed:0,perclos:0}},
 ];
+
+/* ─────────────────────────────────────────
+   Mock devices — 5 simulated drivers
+   IDs start with MOCK- to never clash with real devices
+───────────────────────────────────────── */
+const MOCK_DEVICES: Device[] = [
+  { id:101, device_id:"MOCK-001", driver_name:"Jasur Yusupov",      vehicle_plate:"10B123JY", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.3200,gps_lon:69.2850,gps_speed:42,perclos:0.08}},
+  { id:102, device_id:"MOCK-002", driver_name:"Dilshod Mirzayev",   vehicle_plate:"30A456DM", is_active:true, created_at:"", live:{alarm_level:1,last_seen:new Date().toISOString(),gps_lat:41.2780,gps_lon:69.1980,gps_speed:67,perclos:0.32}},
+  { id:103, device_id:"MOCK-003", driver_name:"Sherzod Qodirov",    vehicle_plate:"01C789SQ", is_active:true, created_at:"", live:{alarm_level:2,last_seen:new Date().toISOString(),gps_lat:39.6547,gps_lon:66.9758,gps_speed:55,perclos:0.55}},
+  { id:104, device_id:"MOCK-004", driver_name:"Otabek Nazarov",     vehicle_plate:"60A321ON", is_active:true, created_at:"", live:{alarm_level:0,last_seen:new Date().toISOString(),gps_lat:41.0040,gps_lon:71.6650,gps_speed:89,perclos:0.12}},
+  { id:105, device_id:"MOCK-005", driver_name:"Rustam Xolmatov",    vehicle_plate:"90B654RX", is_active:true, created_at:"", live:{alarm_level:3,last_seen:new Date().toISOString(),gps_lat:40.7820,gps_lon:72.3440,gps_speed:31,perclos:0.74}},
+];
+
+/* perclos → alarm level mapping */
+function perclosToLevel(p: number): 0|1|2|3 {
+  if (p < 0.2)  return 0;
+  if (p < 0.45) return 1;
+  if (p < 0.65) return 2;
+  return 3;
+}
 
 /* ─────────────────────────────────────────
    Level metadata
@@ -242,7 +262,7 @@ function FilterBtn({ active, onClick, label, count, color }: {
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { devices, setDevices, applyWsPacket } = useFleetStore();
+  const { devices, setDevices, applyWsPacket, patchDevice } = useFleetStore();
   const notificationsEnabled = useNotificationStore((s) => s.notificationsEnabled);
   const addNotification = useNotificationStore((s) => s.addFromPacket);
   const [loading, setLoading] = useState(true);
@@ -262,13 +282,58 @@ export default function Dashboard() {
   }, []);
   const allowMock = import.meta.env.VITE_USE_MOCK_WS === "true";
 
+  // Load real devices and always merge with mock devices
   useEffect(() => {
-    setDevices(INIT_DEVICES);
+    setDevices([...INIT_DEVICES, ...MOCK_DEVICES]);
     api.get<{ results: Device[] }>("/dms/devices/?page_size=100")
-      .then((d) => { if (d.results?.length > 0) setDevices(d.results); })
+      .then((d) => {
+        const real = d.results?.length > 0 ? d.results : INIT_DEVICES;
+        setDevices([...real, ...MOCK_DEVICES]);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [setDevices]);
+
+  // Simulate live updates for mock devices every 2.5 seconds
+  useEffect(() => {
+    // Each mock device has a drifting perclos value
+    const state: Record<string, { perclos: number; drift: number; lat: number; lon: number; speed: number }> = {};
+    MOCK_DEVICES.forEach((d) => {
+      state[d.device_id] = {
+        perclos: d.live?.perclos ?? 0.1,
+        drift: (Math.random() - 0.5) * 0.04,
+        lat: d.live?.gps_lat ?? 41.3,
+        lon: d.live?.gps_lon ?? 69.24,
+        speed: d.live?.gps_speed ?? 50,
+      };
+    });
+
+    const timer = setInterval(() => {
+      MOCK_DEVICES.forEach((d) => {
+        const s = state[d.device_id];
+
+        // Drift perclos between 0.05 and 0.85
+        s.perclos = Math.min(0.85, Math.max(0.05, s.perclos + s.drift + (Math.random() - 0.5) * 0.03));
+        if (s.perclos >= 0.82 || s.perclos <= 0.06) s.drift *= -1;
+
+        // Slowly move GPS (simulate driving ~50km/h)
+        s.lat += (Math.random() - 0.5) * 0.0008;
+        s.lon += (Math.random() - 0.5) * 0.0008;
+        s.speed = Math.max(0, Math.min(120, s.speed + (Math.random() - 0.5) * 8));
+
+        patchDevice(d.device_id, {
+          perclos: +s.perclos.toFixed(3),
+          alarm_level: perclosToLevel(s.perclos),
+          gps_lat: +s.lat.toFixed(5),
+          gps_lon: +s.lon.toFixed(5),
+          gps_speed: +s.speed.toFixed(1),
+          last_seen: new Date().toISOString(),
+        });
+      });
+    }, 2500);
+
+    return () => clearInterval(timer);
+  }, [patchDevice]);
 
   const handlePacket = useCallback((p: WsPacket) => {
     applyWsPacket(p);
